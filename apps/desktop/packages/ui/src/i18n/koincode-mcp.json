@@ -1,0 +1,10 @@
+{
+  "en-US": {
+    "settings.mcp.host.activeDescription": "KoinCode provides this MCP server for the {pluginName} plugin. Its runtime identity is managed by the host.",
+    "settings.mcp.remoteHostUnavailable": "Remote Host is unavailable because its built-in plugin resources could not be verified. Check or restore the plugin resources, then restart KoinCode."
+  },
+  "zh-CN": {
+    "settings.mcp.host.activeDescription": "该 MCP 服务器由 KoinCode 宿主为 {pluginName} 插件提供，运行时身份由宿主管理。",
+    "settings.mcp.remoteHostUnavailable": "Remote Host 的内置插件资源无法验证，暂时不可用。请检查或恢复插件资源后重启 KoinCode。"
+  }
+}

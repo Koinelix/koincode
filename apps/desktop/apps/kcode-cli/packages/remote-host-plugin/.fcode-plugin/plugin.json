@@ -1,0 +1,10 @@
+{
+  "name": "remote-host",
+  "version": "1.1.2",
+  "remoteHostProtocolVersion": 2,
+  "description": "Operate explicitly selected SSH hosts through the KoinCode desktop broker, with exact user approvals and verified file uploads.",
+  "author": {
+    "name": "KoinCode"
+  },
+  "license": "Apache-2.0"
+}

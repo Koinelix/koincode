@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../../.tmp/wallet-typecheck",
+    "rootDir": "src",
+    "lib": ["es2025"],
+    "types": ["node", "electron"],
+    "strict": true
+  },
+  "include": [
+    "src/wallet",
+    "src/general-wallet",
+    "src/payment-owner",
+    "src/main/desktopWallet*.ts",
+    "src/main/desktopGeneralWallet*.ts",
+    "src/main/desktopGeneralConfirmationGate.ts",
+    "src/renderer/public/wallet/en-US.json",
+    "src/renderer/public/wallet/zh-CN.json",
+    "src/main/desktopLegacyAccountSnapshot.ts",
+    "src/main/desktopService*.ts"
+  ],
+  "references": [{ "path": "../wallet" }, { "path": "../shared" }]
+}

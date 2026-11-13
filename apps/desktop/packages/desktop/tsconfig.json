@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.main.json" },
+    { "path": "./tsconfig.host.json" },
+    { "path": "./tsconfig.scheduler.json" },
+    { "path": "./tsconfig.remote-host.json" },
+    { "path": "./tsconfig.wallet.json" },
+    { "path": "./tsconfig.preload.json" },
+    { "path": "./tsconfig.renderer.json" }
+  ]
+}

@@ -1,0 +1,849 @@
+{
+  "components": {
+    "securitySchemes": {
+      "serviceKey": {
+        "description": "Optional Koinelix platform API key; without it each call is paid anonymously.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Generate one image from a text prompt, optionally with up to 3 reference images, and receive it synchronously as Base64 JSON. Price: 0.05 USDC per paid call. No account is needed: send the JSON body with an x402 payment; each anonymous payment buys exactly one generation attempt. Payment settles before generation and is not refunded if generation fails. Generation usually takes tens of seconds; keep the connection open until the response arrives and never pay again for an unknown result. If the response is lost, resend the same PAYMENT-SIGNATURE with the same body instead of paying again; a completed image is not kept, so save it as soon as it arrives. Optional platform API key users get up to three attempts per payment.",
+    "title": "Koinelix AI API",
+    "version": "1.0.0",
+    "x-agents-doc": "http://127.0.0.1:8080/agents.md",
+    "x-guidance": "1. POST /v1/images/generations with a JSON body and no payment to receive HTTP 402 with a PAYMENT-REQUIRED x402 v2 quote. Sign only if the X-Koinelix-Availability response header (also availability in the body) is ready.\nSet model to a published model ID (Published model IDs in agents.md, the model enum in openapi.json); model and prompt are required.\nOptional reference images (edit or combine): image_urls (http or https URLs, passed to the model unchanged) and image_b64 (standard padded Base64 without a data: prefix, at most 10 MiB decoded in total); at most 3 images, ordered image_urls first, then image_b64. The body may then be at most 15 MiB. An unreachable URL or a file that is not an image is rejected by the model after payment. Koinelix does not keep results: to edit an earlier image, send it back as image_b64 or pass its URL in image_urls.\n2. Sign the exact quote (0.05 USDC) and resend the same body with PAYMENT-SIGNATURE. No account or API key is needed.\n3. The payment settles before generation. One anonymous payment buys one attempt; failures are not refunded or retried.\n4. Generation is synchronous and usually takes tens of seconds. Set the client timeout to at least 120 seconds and keep the connection open until the response arrives; save the image as soon as you receive it. If the connection drops, times out or returns a non-JSON error, the result is unknown: resend the same PAYMENT-SIGNATURE and body, never pay again. An attempt that never started runs then; HTTP 409 attempt_in_progress means it is still running, so wait and resend; HTTP 409 image_result_unavailable means it completed but the image is not kept and cannot be downloaded again, and the payment is not refunded.\n5. HTTP 402 payment_invalid means the facilitator rejected the signed payment and nothing was charged. error.message ends with its reason, e.g. insufficient_funds (fund the payer wallet with USDC first) or an expired or invalid signature (sign the new quote again). Never resend the same PAYMENT-SIGNATURE after this.\n6. Limits: per IP and per payer rate limits apply; HTTP 429 includes Retry-After.\n7. Optional: a Koinelix platform API key (Authorization: Bearer) with Idempotency-Key uses account quota first and gives up to three attempts per payment.",
+    "x-koinelix-models": [
+      "koinelix/image-2.5"
+    ]
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/v1/images/generations": {
+      "post": {
+        "description": "Generate one image from a text prompt, optionally with up to 3 reference images, and receive it synchronously as Base64 JSON. Price: 0.05 USDC per paid call. No account is needed: send the JSON body with an x402 payment; each anonymous payment buys exactly one generation attempt. Payment settles before generation and is not refunded if generation fails. Generation usually takes tens of seconds; keep the connection open until the response arrives and never pay again for an unknown result. If the response is lost, resend the same PAYMENT-SIGNATURE with the same body instead of paying again; a completed image is not kept, so save it as soon as it arrives. Optional platform API key users get up to three attempts per payment. Model is optional: a prompt-only body uses the server default published model; an explicit model is used exactly. Anonymous x402 omits Authorization.",
+        "operationId": "generateImage",
+        "parameters": [
+          {
+            "description": "x402 v2 payment payload; omit to receive the 402 quote.",
+            "in": "header",
+            "name": "PAYMENT-SIGNATURE",
+            "required": false,
+            "schema": {
+              "maxLength": 16384,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Required only with a platform API key.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "reference_b64": {
+                  "value": {
+                    "image_b64": [
+                      "<standard Base64 of a JPEG or PNG, no data: prefix>"
+                    ],
+                    "model": "koinelix/image-2.5",
+                    "prompt": "Turn this photo into a watercolor painting"
+                  }
+                },
+                "reference_url": {
+                  "value": {
+                    "image_urls": [
+                      "https://example.com/photo.jpg"
+                    ],
+                    "model": "koinelix/image-2.5",
+                    "prompt": "Replace the man in the reference image with a woman; keep everything else unchanged"
+                  }
+                },
+                "text": {
+                  "value": {
+                    "model": "koinelix/image-2.5",
+                    "prompt": "A watercolor lighthouse at sunrise"
+                  }
+                }
+              },
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "image_b64": {
+                    "description": "Optional reference images as standard padded Base64 without a data: prefix, at most 10 MiB decoded in total. Sent after image_urls; at most 3 images in total.",
+                    "items": {
+                      "contentEncoding": "base64",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 3,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "image_urls": {
+                    "description": "Optional reference image URLs (http or https), passed to the model unchanged. Sent before image_b64; at most 3 images in total.",
+                    "items": {
+                      "format": "uri",
+                      "maxLength": 2048,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 3,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "model": {
+                    "description": "Optional published Koinelix model ID. Omit it to use the server-configured default model.",
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "prompt": {
+                    "description": "Text description, up to 6000 UTF-8 bytes.",
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "prompt"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "created": {
+                      "description": "Unix seconds.",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "b64_json": {
+                            "description": "Base64 image bytes.",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "b64_json"
+                        ],
+                        "type": "object"
+                      },
+                      "maxItems": 1,
+                      "minItems": 1,
+                      "type": "array"
+                    },
+                    "output_format": {
+                      "description": "Actual decoded image format.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "created",
+                    "output_format",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Generated image; PAYMENT-RESPONSE carries the settlement."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "availability": {
+                      "enum": [
+                        "ready",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Invalid input; a signed payment is not verified or settled."
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "availability": {
+                      "enum": [
+                        "ready",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Payment required; PAYMENT-REQUIRED carries the x402 v2 quote."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "availability": {
+                      "enum": [
+                        "ready",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Payment already belongs to another request, or the original result is unavailable."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "availability": {
+                      "enum": [
+                        "ready",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Rate limited; retry after the Retry-After header."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "availability": {
+                      "enum": [
+                        "ready",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Payments temporarily unavailable; nothing was charged."
+          }
+        },
+        "security": [
+          {},
+          {
+            "serviceKey": []
+          }
+        ],
+        "summary": "Generate one image (x402 paid, no account required)",
+        "x-payment-info": {
+          "networks": [
+            "eip155:84532"
+          ],
+          "price": {
+            "amount": "0.05",
+            "currency": "USD",
+            "mode": "fixed"
+          },
+          "protocols": [
+            {
+              "x402": {}
+            }
+          ]
+        }
+      }
+    },
+    "/v1/images/recognitions": {
+      "post": {
+        "description": "Recognize one image with a multimodal model: send one image (a URL or Base64) and an optional prompt, and receive the answer as plain text or Markdown. Price: 0.021 USDC per call. No account is needed: send the JSON body with an x402 payment, or use a Koinelix platform API key.",
+        "operationId": "recognizeImage",
+        "parameters": [
+          {
+            "description": "x402 v2 payment payload; omit to receive the 402 quote.",
+            "in": "header",
+            "name": "PAYMENT-SIGNATURE",
+            "required": false,
+            "schema": {
+              "maxLength": 16384,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optional with a platform API key.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "base64_markdown": {
+                  "value": {
+                    "image_b64": "<standard Base64 of a PNG, JPEG, WebP or GIF, no data: prefix>",
+                    "output_format": "markdown",
+                    "prompt": "List the items on this receipt"
+                  }
+                },
+                "url_text": {
+                  "value": {
+                    "image_url": "https://example.com/photo.jpg"
+                  }
+                }
+              },
+              "schema": {
+                "additionalProperties": false,
+                "oneOf": [
+                  {
+                    "required": [
+                      "image_url"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "image_b64"
+                    ]
+                  }
+                ],
+                "properties": {
+                  "image_b64": {
+                    "contentEncoding": "base64",
+                    "description": "The image as one standard padded Base64 string without a data: prefix: png, jpeg, webp or gif, at most 10 MiB decoded. Use either image_url or image_b64.",
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "image_url": {
+                    "description": "Absolute http or https URL of the image. Use either image_url or image_b64.",
+                    "format": "uri",
+                    "maxLength": 2048,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "output_format": {
+                    "default": "text",
+                    "description": "Format of the answer.",
+                    "enum": [
+                      "text",
+                      "markdown"
+                    ],
+                    "type": "string"
+                  },
+                  "prompt": {
+                    "description": "What to ask about the image, up to 4000 UTF-8 bytes. A default description request is used when omitted.",
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "content": {
+                      "description": "The answer, in the requested format. null when the same request is resent after the answer was delivered.",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "created": {
+                      "description": "Unix seconds.",
+                      "type": "integer"
+                    },
+                    "format": {
+                      "enum": [
+                        "text",
+                        "markdown"
+                      ],
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "result_stored": {
+                      "description": "Present (false) only when the original call is returned again.",
+                      "type": "boolean"
+                    },
+                    "status": {
+                      "description": "Present only when the original call is returned again.",
+                      "enum": [
+                        "succeeded"
+                      ],
+                      "type": "string"
+                    },
+                    "truncated": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "created",
+                    "format",
+                    "content"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The answer; PAYMENT-RESPONSE carries the settlement."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "availability": {
+                      "enum": [
+                        "ready",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Invalid input; a signed payment is not verified or settled."
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "availability": {
+                      "enum": [
+                        "ready",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Payment required; PAYMENT-REQUIRED carries the x402 v2 quote."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "availability": {
+                      "enum": [
+                        "ready",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Payment already belongs to another request, or the original request is still running."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "availability": {
+                      "enum": [
+                        "ready",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The image or prompt could not be processed."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "availability": {
+                      "enum": [
+                        "ready",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Rate limited; retry after the Retry-After header."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "availability": {
+                      "enum": [
+                        "ready",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The recognition request failed."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "availability": {
+                      "enum": [
+                        "ready",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Temporarily unavailable; retry later."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "availability": {
+                      "enum": [
+                        "ready",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The recognition request timed out."
+          }
+        },
+        "security": [
+          {},
+          {
+            "serviceKey": []
+          }
+        ],
+        "summary": "Recognize one image (x402 paid, no account required)",
+        "x-payment-info": {
+          "networks": [
+            "eip155:84532"
+          ],
+          "price": {
+            "amount": "0.021",
+            "currency": "USD",
+            "mode": "fixed"
+          },
+          "protocols": [
+            {
+              "x402": {}
+            }
+          ]
+        }
+      }
+    }
+  }
+}

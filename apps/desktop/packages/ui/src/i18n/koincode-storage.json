@@ -1,0 +1,8 @@
+{
+  "en-US": {
+    "koincode.storage.fixedRootDescription": "KoinCode stores application data in this directory. Wallet files are protected separately and are excluded from cache cleanup."
+  },
+  "zh-CN": {
+    "koincode.storage.fixedRootDescription": "KoinCode 的应用数据保存在此目录。钱包文件单独保护，不会随缓存清理删除。"
+  }
+}

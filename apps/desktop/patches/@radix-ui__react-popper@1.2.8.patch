@@ -1,0 +1,26 @@
+diff --git a/dist/index.js b/dist/index.js
+index 5cb1fd007d32021ad950d961dd4a0868576a2c0d..2d376027d27972bc257b2400a3d3b095254e30c7 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -108,7 +108,7 @@ var PopperContent = React.forwardRef(
+     } = props;
+     const context = usePopperContext(CONTENT_NAME, __scopePopper);
+     const [content, setContent] = React.useState(null);
+-    const composedRefs = (0, import_react_compose_refs.useComposedRefs)(forwardedRef, (node) => setContent(node));
++    const composedRefs = (0, import_react_compose_refs.useComposedRefs)(forwardedRef, setContent);
+     const [arrow, setArrow] = React.useState(null);
+     const arrowSize = (0, import_react_use_size.useSize)(arrow);
+     const arrowWidth = arrowSize?.width ?? 0;
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 9f84984eab84e32d20d6c052217da0e3b8374b40..e3faa0baa760df1a2098e5bd4ba40d01f9816c0d 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -73,7 +73,7 @@ var PopperContent = React.forwardRef(
+     } = props;
+     const context = usePopperContext(CONTENT_NAME, __scopePopper);
+     const [content, setContent] = React.useState(null);
+-    const composedRefs = useComposedRefs(forwardedRef, (node) => setContent(node));
++    const composedRefs = useComposedRefs(forwardedRef, setContent);
+     const [arrow, setArrow] = React.useState(null);
+     const arrowSize = useSize(arrow);
+     const arrowWidth = arrowSize?.width ?? 0;

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "files": {
+    "LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "SKILL.md": "f396d3d710096cdc13622ff59d62d99d47a2a8414b07f504c59a7106a422476e",
+    "references/images-api.md": "739db1e3c74551e81fe06931651f4d5715072aef738ced242bb64682cb04c3d2",
+    "references/openapi.yaml": "8d0b11046e8d0ca06dff5851f7a588ea6caa3034eee69303c2227f56dec94c0d",
+    "references/reference-host.md": "b41b551a1ae05905f600882221ece7fe608a5b625224d08f0d970ce0829d0f1b",
+    "references/wallet-compatibility.md": "a82425c5c91f75717393f69bd37c9e2fc27702ca6a1f57449408b3b17e1cf1c8",
+    "references/x402-and-recovery.md": "cda8f429d175fbdb82652a98c65b799e8b8e9b16a6a5ee3dc3e61f34820781f2",
+    "scripts/configure_image.py": "1816d68782f680a0411db29086c077c231cd4d2ba67ae4eb40a5edf7c3e73c0f",
+    "scripts/generate_image.py": "98f27000cfd882d9ce3ce6583a3470721d552b49e8ce310d8e5e0b32cce702a6",
+    "scripts/image_config.py": "f7713a3b9ebdf2be89037815c69ff56547aa1111c93d108dc17d61d38864fc01",
+    "scripts/image_result.py": "0ac77921d4d1b6b83fef04e70eb2727ea7e1394320ae81ee40a3a87d35537d4f",
+    "scripts/reference_host.py": "42a5a711adca15cbbf73a4c1653ef60bdf02f4797aa130305b6e1d11470b9a13",
+    "scripts/request_options.py": "6e14122136ddaa991ea0d9c8289c13139a5edca8bb9ae155610376419d5352bf",
+    "scripts/request_store.py": "65c0f9d22954b158dc6d1f92ebb604c867044c1c4d5420d5e283886ac362776d",
+    "scripts/response_privacy.py": "e7f8bb95311dce68de618db7ad178f9552946a77f696fe1a3b303c7e99782394",
+    "scripts/wallet_client.py": "8c99a5e7b9962cea444718e31ed336511b63c7e8c29dd746407b16606c60b41b"
+  }
+}

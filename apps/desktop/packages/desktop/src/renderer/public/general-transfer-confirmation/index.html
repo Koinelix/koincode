@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Confirm a manual transfer</title>
+<link rel="stylesheet" href="style.css">
+<script src="confirmation.js" defer></script>
+</head>
+<body>
+<main>
+<header><p class="eyebrow" data-i18n="eyebrow">Manual transfer</p><h1 data-i18n="title">Review the transfer</h1></header>
+<p id="status" role="status" aria-live="polite" data-i18n="checking">Checking the protected host…</p>
+<section id="details" hidden>
+<div class="network"><strong id="network-name"></strong><span id="environment" class="badge"></span></div>
+<p class="notice" data-i18n="separation">Manual transfers and Skill automatic payments use separate budgets.</p>
+<dl>
+<div><dt data-i18n="account">From account</dt><dd id="account" class="code"></dd></div>
+<div><dt data-i18n="recipient">Recipient</dt><dd id="recipient" class="code"></dd></div>
+<div id="contract-row" hidden><dt data-i18n="contract">Token contract</dt><dd id="contract" class="code"></dd></div>
+<div class="amount-row"><dt data-i18n="amount">Amount</dt><dd><span id="asset"></span><strong id="amount" class="amount"></strong><small><span data-i18n="atomic">Atomic units</span>: <span id="amount-atomic"></span></small></dd></div>
+<div><dt data-i18n="maxFee">Maximum network fee</dt><dd><strong id="max-fee"></strong><small><span data-i18n="atomic">Atomic units</span>: <span id="fee-atomic"></span></small></dd></div>
+<div><dt data-i18n="nativeExposure">Maximum native currency exposure</dt><dd id="native-exposure"></dd></div>
+</dl>
+<details><summary data-i18n="estimate">Gas and node observations</summary><dl>
+<div><dt data-i18n="gasLimit">Frozen gas limit</dt><dd id="gas-limit"></dd></div>
+<div><dt data-i18n="gasPrice">Frozen gas price / max fee per gas (atomic)</dt><dd id="gas-price"></dd></div>
+<div id="priority-row" hidden><dt data-i18n="priorityFee">Max priority fee per gas (atomic)</dt><dd id="priority-fee"></dd></div>
+<div><dt data-i18n="feeType">Fee type</dt><dd id="fee-type"></dd></div>
+<div><dt data-i18n="nonce">Nonce</dt><dd id="nonce"></dd></div>
+<div><dt data-i18n="estimate">Gas and node observations</dt><dd><span id="gas-estimate"></span><small id="estimated-fee"></small></dd></div>
+<div><dt data-i18n="quoteBlock">Fee observation block</dt><dd><span id="quote-block"></span><small id="quote-hash" class="code"></small></dd></div>
+<div><dt data-i18n="estimateBlock">Simulation block</dt><dd><span id="estimate-block"></span><small id="estimate-hash" class="code"></small></dd></div>
+</dl><p class="muted" data-i18n="estimateNotice">Node estimates are observations, not a second fee allowance or settlement evidence.</p></details>
+<div class="digest"><span data-i18n="digest">Frozen transaction digest</span><code id="digest"></code></div>
+<p class="muted" data-i18n="nextStep">Confirmation continues to system authentication and final checks. It does not itself sign or broadcast.</p>
+</section>
+</main>
+<footer><p id="countdown" role="timer"></p><div class="actions"><button id="cancel" class="secondary" type="button" data-i18n="cancel">Cancel</button><button id="accept" type="button" data-i18n="accept" disabled>Confirm, then authenticate</button></div></footer>
+</body>
+</html>

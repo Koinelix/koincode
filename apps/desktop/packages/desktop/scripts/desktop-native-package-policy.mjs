@@ -1,0 +1,133 @@
+import { relative, sep } from "node:path";
+
+const SUPPORTED_DESKTOP_PLATFORM_KEYS = [
+  "darwin-arm64",
+  "darwin-x64",
+  "linux-arm64",
+  "linux-x64",
+  "win32-arm64",
+  "win32-x64",
+];
+const KOFFI_PLATFORM_KEYS = [
+  "darwin_arm64", "darwin_x64", "freebsd_arm64", "freebsd_ia32", "freebsd_x64",
+  "linux_arm64", "linux_armhf", "linux_ia32", "linux_loong64", "linux_riscv64d", "linux_x64",
+  "musl_arm64", "musl_x64", "openbsd_ia32", "openbsd_x64", "win32_arm64", "win32_ia32", "win32_x64",
+];
+
+export function createKoffiPlatformCopyFilter(packageRoot, targetPlatformKey) {
+  assertSupportedTargetPlatformKey(targetPlatformKey);
+  return (source) => {
+    const path = relative(packageRoot, source).split(sep).join("/");
+    const platform = /^build\/koffi\/([^/]+)/.exec(path)?.[1];
+    return !platform || platform === targetPlatformKey.replace("-", "_");
+  };
+}
+
+function assertSupportedTargetPlatformKey(targetPlatformKey) {
+  if (!SUPPORTED_DESKTOP_PLATFORM_KEYS.includes(targetPlatformKey)) {
+    throw new Error(`不支持的桌面目标平台: ${targetPlatformKey}`);
+  }
+}
+
+export function createDesktopNativePackagePrunePatterns(targetPlatformKey) {
+  assertSupportedTargetPlatformKey(targetPlatformKey);
+
+  return [
+    ...KOFFI_PLATFORM_KEYS.filter((key) => key !== targetPlatformKey.replace("-", "_")).map(
+      (key) => `!node_modules/koffi/build/koffi/${key}/**`,
+    ),
+    // PDF 预览已经由 Vite 打进 renderer，pdfjs-dist 的 Canvas optional dependency
+    // 只服务 Node 渲染；pnpm 跨平台安装的 8 套 Canvas native 不应带进桌面安装包。
+    "!node_modules/@napi-rs/canvas/**",
+    "!node_modules/@napi-rs/canvas-*/**",
+    // Linux prebuild 会在 beforePack 复制进 node-pty；源平台包本身不属于桌面运行时。
+    "!node_modules/@lydell/node-pty-*/**",
+    // 桌面运行时统一使用目标 prebuild，禁止把安装机现场编译物或 ABI bin 缓存带进跨平台包。
+    "!node_modules/node-pty/build/**",
+    "!node_modules/node-pty/bin/**",
+    ...SUPPORTED_DESKTOP_PLATFORM_KEYS.filter((key) => key !== targetPlatformKey).map(
+      (key) => `!node_modules/node-pty/prebuilds/${key}/**`,
+    ),
+  ];
+}
+
+function normalizeAsarPath(path) {
+  const normalized = path.trim().replaceAll("\\", "/");
+  return normalized.startsWith("/") ? normalized : `/${normalized}`;
+}
+
+export function parseAsarListWithPackState(output) {
+  return output
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const match = /^(pack|unpack)\s*:\s*(.+)$/.exec(line);
+      if (!match) {
+        throw new Error(`无法解析 asar pack state: ${line}`);
+      }
+      return { packState: match[1], path: normalizeAsarPath(match[2]) };
+    });
+}
+
+function isNativeRuntimeFile(path, targetPlatformKey) {
+  if (/\.(?:node|dll|dylib|exe)$/i.test(path)) return true;
+  return path === `/node_modules/node-pty/prebuilds/${targetPlatformKey}/spawn-helper`;
+}
+
+export function findDesktopNativePackageViolations(entries, targetPlatformKey) {
+  assertSupportedTargetPlatformKey(targetPlatformKey);
+  const violations = [];
+
+  for (const entry of entries) {
+    const { packState, path } = entry;
+
+    if (
+      path === "/node_modules/@napi-rs/canvas" ||
+      path.startsWith("/node_modules/@napi-rs/canvas/") ||
+      path.startsWith("/node_modules/@napi-rs/canvas-")
+    ) {
+      violations.push(`不应打包 renderer 无需的 Canvas native: ${path}`);
+      continue;
+    }
+
+    if (path.startsWith("/node_modules/@lydell/node-pty-")) {
+      violations.push(`不应打包仅用于准备 prebuild 的平台源包: ${path}`);
+      continue;
+    }
+
+    if (
+      path.startsWith("/node_modules/node-pty/build/") ||
+      path.startsWith("/node_modules/node-pty/bin/")
+    ) {
+      violations.push(`不应打包安装机生成的 node-pty 产物: ${path}`);
+      continue;
+    }
+
+    const nodePtyPrebuildMatch = /^\/node_modules\/node-pty\/prebuilds\/([^/]+)/.exec(path);
+    if (nodePtyPrebuildMatch && nodePtyPrebuildMatch[1] !== targetPlatformKey) {
+      violations.push(`node-pty 包含非目标平台 prebuild: ${path}`);
+      continue;
+    }
+    const koffiPlatformMatch = /^\/node_modules\/koffi\/build\/koffi\/([^/]+)/.exec(path);
+    if (koffiPlatformMatch && koffiPlatformMatch[1] !== targetPlatformKey.replace("-", "_")) {
+      violations.push(`Koffi contains a non-target native runtime: ${path}`);
+      continue;
+    }
+
+    if (isNativeRuntimeFile(path, targetPlatformKey) && packState !== "unpack") {
+      violations.push(`native 文件仍作为 packed payload 留在 app.asar: ${path}`);
+    }
+  }
+
+  return violations;
+}
+
+export function findWindowsRemoteHostRuntimeViolations(entries, targetPlatformKey) {
+  if (targetPlatformKey !== "win32-x64") return [];
+  const expectedNative = "/node_modules/koffi/build/koffi/win32_x64/koffi.node";
+  const violations = [];
+  if (!entries.some((entry) => entry.path === "/node_modules/koffi/index.js")) violations.push("Remote Host is missing its Koffi runtime entry");
+  if (!entries.some((entry) => entry.path === expectedNative && entry.packState === "unpack")) violations.push("Remote Host is missing its unpacked Windows x64 Koffi runtime");
+  return violations;
+}

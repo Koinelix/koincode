@@ -1,0 +1,33 @@
+diff --git a/dist/index.js b/dist/index.js
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -712,7 +712,7 @@
+         "aria-controls": subContext.contentId,
+         "data-state": getOpenState(context.open),
+         ...props,
+-        ref: (0, import_react_compose_refs.composeRefs)(forwardedRef, subContext.onTriggerChange),
++        ref: (0, import_react_compose_refs.useComposedRefs)(forwardedRef, subContext.onTriggerChange),
+         onClick: (event) => {
+           props.onClick?.(event);
+           if (props.disabled || event.defaultPrevented) return;
+diff --git a/dist/index.mjs b/dist/index.mjs
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -4,7 +4,7 @@
+ import * as React from "react";
+ import { composeEventHandlers } from "@radix-ui/primitive";
+ import { createCollection } from "@radix-ui/react-collection";
+-import { useComposedRefs, composeRefs } from "@radix-ui/react-compose-refs";
++import { useComposedRefs } from "@radix-ui/react-compose-refs";
+ import { createContextScope } from "@radix-ui/react-context";
+ import { useDirection } from "@radix-ui/react-direction";
+ import { DismissableLayer } from "@radix-ui/react-dismissable-layer";
+@@ -645,7 +645,7 @@
+         "aria-controls": subContext.contentId,
+         "data-state": getOpenState(context.open),
+         ...props,
+-        ref: composeRefs(forwardedRef, subContext.onTriggerChange),
++        ref: useComposedRefs(forwardedRef, subContext.onTriggerChange),
+         onClick: (event) => {
+           props.onClick?.(event);
+           if (props.disabled || event.defaultPrevented) return;

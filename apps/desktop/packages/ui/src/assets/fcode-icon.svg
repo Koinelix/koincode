@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">KoinCode app icon</title>
+  <desc id="desc">An ivory KC ligature on a forest teal rounded square.</desc>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="#064D46"/>
+  <path fill="#FFF6E6" d="M92 126H151V223L240 140C251 130 264 126 280 126H340C395 126 431 157 438 215H384C377 191 363 182 340 182H291C277 182 268 186 258 195L194 259L259 324C268 333 278 337 291 337H340C363 337 378 325 384 301H438C430 359 395 392 340 392H280C259 392 242 386 226 371L151 297V392H92Z"/>
+</svg>

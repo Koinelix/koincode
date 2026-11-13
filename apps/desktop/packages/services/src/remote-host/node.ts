@@ -1,0 +1,10 @@
+export { RemoteHostRuntime, publicRemoteSource } from "./runtime.js";
+export type { RemoteHostRuntimeOptions } from "./runtime.js";
+export type { RemoteSystemSecretPort, RemoteSecretEnvelope } from "./secretVault.js";
+export type { RemoteClientPrincipal } from "./invocationRegistry.js";
+export type { RemoteHumanDecision } from "./approvalAuthority.js";
+export { acquireRemoteBrokerLease } from "./brokerLease.js";
+export { RemoteHostControlRouter } from "./controlRouter.js";
+export type { RemoteHostMainScope } from "./controlRouter.js";
+export { createWindowsRemoteHostListener } from "./windowsPipe.js";
+export { prepareWindowsRemoteHostStorage, disposeWindowsRemoteHostStorage } from "./windowsSecurity.js";

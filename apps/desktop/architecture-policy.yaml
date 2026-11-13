@@ -1,0 +1,75 @@
+version: 1
+
+# Legacy modules remain unmanaged; new and migrated modules are managed.
+modules:
+  - id: rpc
+    roots: [packages/rpc/src]
+    managed: false
+  - id: shared
+    roots: [packages/shared/src]
+    managed: false
+  - id: provider
+    roots: [packages/provider/src]
+    managed: false
+  - id: provider-node
+    roots: [packages/provider-node/src]
+    managed: false
+  - id: services
+    roots: [packages/services/src]
+    managed: false
+  - id: session
+    roots: [packages/services/src/session]
+    managed: false
+    requires: [shared]
+    publicEntrypoints: [packages/services/src/session/contract.ts]
+    owner: conversation
+  - id: storage
+    roots: [packages/services/src/storage]
+    managed: true
+    requires: [shared, rpc, services]
+    publicEntrypoints: [packages/services/src/storage/contract.ts]
+    layers: { domain: domain, app: app, adapters: adapters }
+    layerOrder: [domain, app, adapters]
+    owner: desktop-settings
+  - id: wallet
+    roots: [packages/wallet/src]
+    managed: true
+    requires: []
+    publicEntrypoints: [packages/wallet/src/contract.ts, packages/wallet/src/node.ts, packages/wallet/src/host.ts, packages/wallet/src/general.ts, packages/wallet/src/general-receive.ts, packages/wallet/src/protected-host.ts, packages/wallet/src/local-management.ts]
+    layers: { domain: domain, app: app, adapters: adapters }
+    layerOrder: [domain, app, adapters]
+    owner: wallet-runtime
+  - id: client
+    roots: [packages/client/src]
+    managed: false
+  - id: server
+    roots: [packages/server/src]
+    managed: false
+  - id: server-cli
+    roots: [packages/server-cli/src]
+    managed: false
+  - id: ui
+    roots: [packages/ui/src]
+    managed: false
+  - id: web
+    roots: [packages/web/src]
+    managed: false
+  - id: desktop
+    roots: [packages/desktop/src]
+    managed: false
+  - id: formal-proof
+    roots: [packages/formal-proof/src]
+    managed: false
+  - id: fcode-cli
+    roots: [apps/kcode-cli]
+    managed: false
+
+global:
+  maxFileLines: 400
+  maxContractLines: 300
+  maxPublicMethods: 12
+  forbidCycles: true
+  forbidDeepImports: true
+  managedOnly: true
+
+exceptions: []

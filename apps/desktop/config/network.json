@@ -1,0 +1,4 @@
+{
+  "testnet": { "x402Mainnet": false, "llmBaseUrl": "http://127.0.0.1:8080/v1" },
+  "mainnet": { "x402Mainnet": true, "llmBaseUrl": "https://api.koinelix.com/v1" }
+}

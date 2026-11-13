@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-src 'none'; connect-src 'none'" />
+    <title>KoinCode Payment</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script defer src="./payments.js"></script>
+    <script defer src="./payment-confirmation.js"></script>
+  </head>
+  <body>
+    <main class="payment-prompt">
+      <div id="payment-error" role="alert" hidden></div>
+      <section id="wallet-payments" aria-live="polite" hidden></section>
+    </main>
+  </body>
+</html>

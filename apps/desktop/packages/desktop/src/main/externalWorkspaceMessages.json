@@ -1,0 +1,16 @@
+{
+  "zh-CN": {
+    "open": "打开文件夹",
+    "cancel": "取消",
+    "title": "打开外部 KoinCode 链接？",
+    "message": "是否在 KoinCode 中打开此文件夹？",
+    "detail": "只打开你信任来源的文件夹。项目设置可能影响 agent runtime。"
+  },
+  "en-US": {
+    "open": "Open folder",
+    "cancel": "Cancel",
+    "title": "Open external KoinCode link?",
+    "message": "Open this folder in KoinCode?",
+    "detail": "Only open folders from sources you trust. Project settings may affect the agent runtime."
+  }
+}

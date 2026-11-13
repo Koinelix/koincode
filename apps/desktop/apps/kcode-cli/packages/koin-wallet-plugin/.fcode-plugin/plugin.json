@@ -1,0 +1,7 @@
+{
+  "name": "koin-wallet",
+  "version": "0.2.0",
+  "description": "Connect independent x402 clients to the general wallet for policy-controlled payments.",
+  "author": { "name": "KoinCode" },
+  "license": "Apache-2.0"
+}

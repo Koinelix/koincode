@@ -1,0 +1,5 @@
+{
+  "connected": "Authorization complete. You can return to KoinCode. 授权完成，请返回 KoinCode。",
+  "accountOnHold": "Claude denied authorization: account or organization on hold (account_on_hold). Check your account at claude.ai/restricted. Claude 返回账号或组织受限，未授予访问权限。请到 claude.ai/restricted 确认状态，再返回 KoinCode。",
+  "incomplete": "Authorization did not complete. Please return to KoinCode. 请返回 KoinCode 查看授权结果。"
+}

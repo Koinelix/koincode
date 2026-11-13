@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "out/remote-host", "rootDir": "src/remote-host", "lib": ["es2025"], "types": ["node", "electron"]
+  },
+  "include": ["src/remote-host"],
+  "references": [{ "path": "../shared" }, { "path": "../services" }, { "path": "../server" }]
+}

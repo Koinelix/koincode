@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en" data-management="basic">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wallet setup</title>
+<link rel="stylesheet" href="style.css">
+<script src="history.js" defer></script>
+<script src="manual.js" defer></script>
+<script src="backup.js" defer></script>
+<script src="restore.js" defer></script>
+<script src="accounts.js" defer></script>
+<script src="setup.js" defer></script>
+</head>
+<body>
+<main>
+<header><p class="eyebrow" data-i18n="eyebrow">Wallet accounts</p><h1 data-i18n="title">My wallets</h1></header>
+<p class="muted" data-i18n="separation">Recovery words and private keys stay in this protected window and are never returned to the LLM.</p>
+<p id="status" role="status" aria-live="polite" tabindex="-1">Checking protected host…</p>
+<section id="choices" aria-label="Wallet options" hidden>
+<button id="create" data-i18n="create">Create a new wallet</button>
+<button id="import" class="secondary" data-i18n="import">Import an existing wallet</button>
+</section>
+<section id="import-options" hidden>
+<button id="import-mnemonic" class="secondary" data-i18n="importMnemonic">Import 12 recovery words</button>
+<button id="import-key" class="secondary" data-i18n="importKey">Import a private key</button>
+<button id="restore-open" class="secondary" data-i18n="restoreTitle" hidden>Restore an encrypted wallet backup</button>
+</section>
+<form id="import-form" hidden autocomplete="off">
+<label id="secret-label" for="secret" data-i18n="secretLabel">Recovery phrase or private key</label>
+<textarea id="secret" rows="4" maxlength="1024" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" disabled></textarea>
+<button id="preview" type="submit" data-i18n="preview">Preview account address</button>
+</form>
+<section id="address-preview" hidden>
+<h2 data-i18n="verifyAddress">Verify the account address</h2>
+<p id="address" class="address"></p>
+<p class="muted" data-i18n="firstAccount">Only the first EVM account is added.</p>
+<button id="confirm-address" data-i18n="confirmAddress">Import this account</button>
+</section>
+<section id="mnemonic-accounts" hidden>
+<h2 data-i18n="chooseAccounts">Select accounts to import</h2>
+<div id="mnemonic-account-list"></div><p id="selection-count" role="status"></p>
+<button id="more-accounts" class="secondary" data-i18n="moreAccounts">Load more accounts</button>
+<button id="import-selected" data-i18n="importSelected">Import selected accounts</button>
+</section>
+<section id="recovery-words" hidden>
+<h2 data-i18n="backupTitle">Back up your recovery words</h2>
+<p data-i18n="backupWarning">Write all 12 words in order. Anyone with these words controls the wallet. Do not share them in chat.</p>
+<ol id="words"></ol>
+<button id="copy-mnemonic" class="secondary" data-i18n="copyMnemonic" disabled>Copy recovery words</button>
+<button id="begin-challenge" data-i18n="savedWords">I saved the words</button>
+</section>
+<form id="backup-form" hidden autocomplete="off">
+<h2 data-i18n="challengeTitle">Confirm your backup</h2>
+<div id="challenge"></div>
+<button id="confirm-backup" type="submit" data-i18n="confirmBackup">Confirm backup</button>
+</form>
+<section id="accounts" hidden><h2 data-i18n="accounts">Accounts</h2><ul id="account-list"></ul></section>
+<section id="secret-export" hidden>
+<h2 data-i18n="secretExportTitle">Export wallet</h2>
+<p id="secret-export-address" class="address"></p>
+<p data-i18n="secretExportWarning">Anyone with these secrets controls this wallet. Keep them private and never send them in chat.</p>
+<p id="secret-export-scope" class="muted"></p>
+<button id="secret-export-mnemonic" class="secondary" data-i18n="secretExportMnemonic">Authenticate and reveal 12 recovery words</button>
+<button id="secret-export-key" class="secondary" data-i18n="secretExportKey">Authenticate and reveal private key</button>
+<p id="secret-export-note" role="status"></p>
+<pre id="secret-export-value" class="address" tabindex="0" hidden></pre>
+<button id="secret-export-back" class="quiet" data-i18n="back">Back</button>
+</section>
+<form id="manual-form" hidden autocomplete="off">
+<h2 data-i18n="manualTitle">Manual transfer</h2>
+<label data-i18n="manualAccount">Account</label><p id="manual-address" class="address"></p>
+<label for="manual-network" data-i18n="manualNetwork">Network</label><select id="manual-network"></select>
+<label for="manual-asset" data-i18n="manualAsset">Asset and contract</label><select id="manual-asset"></select>
+<label for="manual-recipient" data-i18n="manualRecipient">Recipient address</label><input id="manual-recipient" maxlength="64" required spellcheck="false" autocapitalize="off" autocomplete="off">
+<label for="manual-amount" data-i18n="manualAmount">Amount</label><input id="manual-amount" maxlength="256" inputmode="decimal" required autocomplete="off">
+<p id="manual-note" role="status" aria-live="polite"></p><p id="manual-result" class="address"></p>
+<button id="manual-send" type="submit" data-i18n="manualSend">Check and confirm transfer</button>
+<button id="manual-cancel" type="button" class="secondary" disabled data-i18n="manualCancel">Cancel original operation</button>
+<button id="manual-back" type="button" class="quiet" data-i18n="back">Back</button>
+</form>
+<section id="history" hidden>
+<h2 data-i18n="historyTitle">Manual transfer records</h2>
+<p id="history-address" class="address"></p>
+<label for="history-network" data-i18n="historyNetwork">Network</label><select id="history-network"></select>
+<p id="history-note" role="status"></p><ol id="history-items"></ol>
+<button id="history-refresh" class="secondary" data-i18n="historyRefresh">Refresh records</button>
+<button id="history-next" class="secondary" hidden data-i18n="historyNext">Next page</button>
+<button id="history-back" class="quiet" data-i18n="back">Back</button>
+</section>
+<section id="pending" hidden><h2 data-i18n="pending">Unfinished setup</h2><ul id="pending-list"></ul></section>
+<section id="backup-tools" hidden><button id="backup-open" class="secondary" data-i18n="exportTitle">Export encrypted wallet backup</button></section>
+<form id="backup-export-form" hidden autocomplete="off">
+<h2 data-i18n="exportTitle">Export encrypted wallet backup</h2>
+<p class="muted" data-i18n="exportNotice">The backup contains the selected keys and all known history at export time. It does not prove current signing continuity.</p>
+<h3 data-i18n="exportSources">Wallet sources</h3><ul id="export-sources"></ul>
+<h3 data-i18n="exportPending">Unfinished material</h3><ul id="export-pending"></ul>
+<p id="export-coverage" role="status" aria-live="polite"></p>
+<div id="export-omitted-section" hidden><h3 data-i18n="exportOmitted">These entries will have history but no keys in this backup</h3><ul id="export-omitted"></ul></div>
+<p class="muted" data-i18n="exportSeedWarning">A recovery phrase can control more accounts than the first address. A private key restores only its own account. Protect the file and password separately.</p>
+<label for="export-password" data-i18n="exportPassword">Backup password</label>
+<input id="export-password" type="password" maxlength="8192" autocomplete="new-password" autocapitalize="off" spellcheck="false" disabled>
+<label for="export-confirm" data-i18n="exportConfirm">Repeat backup password</label>
+<input id="export-confirm" type="password" maxlength="8192" autocomplete="new-password" autocapitalize="off" spellcheck="false" disabled>
+<p class="muted" data-i18n="exportPasswordRule">Use at least 16 characters, at most 256 UTF-8 bytes. This password cannot be recovered by the application.</p>
+<p id="export-note" role="status" aria-live="polite"></p><p id="export-result" class="address"></p>
+<button id="export-submit" type="submit" data-i18n="exportSave" disabled>Authenticate and save a new file</button>
+<button id="export-cancel" type="button" class="secondary" data-i18n="exportCancel" disabled>Cancel original backup</button>
+<button id="export-back" type="button" class="quiet" data-i18n="back">Back</button>
+</form>
+<section id="restore-form" hidden>
+<h2 data-i18n="restoreTitle">Restore an encrypted wallet backup</h2>
+<p class="muted" data-i18n="restoreNotice">Select one encrypted general-wallet backup. Existing Skill wallets and budgets are unchanged.</p>
+<p id="restore-summary" class="address"></p><ul id="restore-accounts"></ul>
+<p id="restore-note" role="status" aria-live="polite"></p><p id="restore-result" class="address"></p>
+<form id="restore-password-form" hidden autocomplete="off">
+<label for="restore-password" data-i18n="restorePassword">Backup password for this authenticated step</label>
+<input id="restore-password" type="password" maxlength="8192" autocomplete="off" autocapitalize="off" spellcheck="false" disabled>
+<button id="restore-password-submit" type="submit" data-i18n="restorePasswordSubmit" disabled>Verify backup</button>
+</form>
+<button id="restore-prepare" data-i18n="restorePrepare" disabled>Select a file and preview</button>
+<button id="restore-publish" data-i18n="restorePublish" hidden disabled>Confirm this restore plan</button>
+<button id="restore-cancel" class="secondary" data-i18n="restoreCancel" disabled>Cancel original restore task</button>
+<button id="restore-back" class="quiet" data-i18n="back">Back</button>
+</section>
+<footer><button id="back" class="quiet" hidden data-i18n="back">Back</button><button id="cancel" class="secondary" hidden data-i18n="cancel">Cancel this setup</button><button id="close" class="quiet" data-i18n="close">Close</button></footer>
+<dialog id="payment-upgrade" aria-labelledby="payment-upgrade-title">
+<h2 id="payment-upgrade-title" data-i18n="paymentUpgradeTitle">Connect new wallets to payments</h2>
+<p data-i18n="paymentUpgradeNotice">This upgrades the existing local payment ledger after creating and verifying a consistent backup. Existing wallets, grants and spending records are preserved. New wallets start with payments disabled and zero limits. The backup remains beside the original ledger; older app versions cannot open the upgraded ledger.</p>
+<button id="payment-upgrade-confirm" data-i18n="paymentUpgradeConfirm">Back up and connect</button>
+<button id="payment-upgrade-cancel" class="secondary" data-i18n="cancel">Cancel</button>
+</dialog>
+</main>
+</body>
+</html>

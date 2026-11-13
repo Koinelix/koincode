@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./settings.js"></script>
+  <title>Service credentials</title>
+</head>
+<body><main><h1 id="title">Service credentials</h1><p id="description"></p><div id="error" role="alert"></div>
+  <section><h2 id="saved-title"></h2><div id="entries"></div></section>
+  <section><h2 id="add-title"></h2><form id="form">
+    <label><span id="origin-label"></span><input id="origin" type="url" autocomplete="off" required></label>
+    <label><span id="path-label"></span><input id="path" type="text" autocomplete="off" required></label>
+    <label><span id="secret-label"></span><input id="secret" type="password" autocomplete="new-password" maxlength="4096" required></label>
+    <button id="save" type="submit"></button><button id="cancel-edit" type="button" hidden></button>
+  </form></section><p id="saved" role="status"></p></main></body>
+</html>

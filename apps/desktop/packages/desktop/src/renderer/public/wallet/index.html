@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-src 'none'; connect-src 'none'"
+    />
+    <title>KoinCode Wallet</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script defer src="./settings.js"></script>
+    <script defer src="./custom-assets.js"></script>
+    <script defer src="./network-visibility.js"></script>
+    <script defer src="./general-custom-summary.js"></script>
+    <script defer src="./general-rpc-settings.js"></script>
+    <script defer src="./general.js"></script>
+    <script defer src="./history.js"></script>
+    <script defer src="./home.js"></script>
+    <script defer src="./view.js"></script>
+  </head>
+  <body>
+    <main class="wallet-app">
+      <div id="error" role="alert" hidden></div>
+      <button id="migrate-storage" data-text="migrateStorage" hidden>Update existing wallet storage</button>
+      <section class="wallet-card" id="wallet-card" aria-label="Wallet">
+        <div id="wallet-account-menu" class="wallet-account-menu" hidden>
+          <div id="wallet-management-slot"></div>
+          <button id="wallet-open-assets" type="button" data-text="homeAssetSettings">Asset & RPC settings</button>
+          <button id="refresh" type="button" data-text="homeReload">Reload wallet status</button>
+        </div>
+        <div id="wallet-setup-guide" hidden><h1 data-text="homeSetupTitle">Set up your wallet</h1><p data-text="homeSetupDescription">Create a new wallet or import an existing one to get started.</p></div>
+        <div class="wallet-account-heading">
+          <label class="wallet-picker"><span id="wallet-single-name"></span><select id="wallet-selector" disabled aria-label="Current wallet" data-aria-text="homeCurrent"></select></label>
+          <button id="wallet-menu-toggle" type="button" class="icon-button" aria-expanded="false" aria-controls="wallet-account-menu" data-aria-text="homeManage" aria-label="Manage wallet"><span aria-hidden="true">⋯</span></button>
+        </div>
+        <p id="wallet-address" class="address" hidden>—</p>
+        <div class="wallet-address"><span id="wallet-short-address">—</span><button id="wallet-copy-address" class="icon-button" type="button" data-aria-text="generalCopyAddress" aria-label="Copy address" disabled><span id="wallet-copy-icon" aria-hidden="true">⧉</span></button><span id="wallet-copy-status" class="sr-only" role="status" aria-live="polite"></span></div>
+        <div class="wallet-network-row"><span class="network-dot" aria-hidden="true"></span><span id="wallet-network-label">—</span><span id="wallet-network-badge" class="network-badge" hidden></span><select id="general-network" hidden disabled data-aria-text="generalNetwork" aria-label="Network"></select></div>
+        <div class="wallet-balance-heading"><span data-text="homeUsdcBalance">USDC balance</span><button id="general-read-balance" type="button" class="text-button" disabled data-text="homeReadBalance">Refresh balance</button></div>
+        <div class="wallet-primary-balance"><strong id="wallet-usdc-balance">—</strong><span>USDC</span></div>
+        <div id="wallet-balance-placeholder" class="balance-placeholder"><span data-text="homeBalancePending">Refresh to read your balance</span></div>
+        <button id="general-open-receive" class="receive-button" type="button" disabled><span aria-hidden="true">↓</span><span data-text="generalReceive">Receive</span></button>
+        <div id="general-assets-list-wrap" hidden>
+          <h3 id="general-assets-list-title" data-text="generalAssetList">Assets</h3>
+          <div id="general-assets-list" role="list" aria-labelledby="general-assets-list-title"></div>
+        </div>
+
+        <p id="general-result" class="wallet-status" role="status" aria-live="polite"></p>
+
+        <div class="wallet-main-actions" id="wallet-management-actions">
+          <button id="general-create" type="button"><span class="action-icon" aria-hidden="true">＋</span><span data-text="generalCreate">Create wallet</span></button>
+          <button id="general-import" type="button"><span class="action-icon" aria-hidden="true">↓</span><span data-text="generalImport">Import wallet</span></button>
+          <button id="wallet-rename" type="button" data-text="walletRename">Rename wallet</button>
+          <button id="wallet-export" type="button"><span class="action-icon" aria-hidden="true">↗</span><span data-text="homeExport">Export wallet</span></button>
+        </div>
+        <p id="general-setup-status" class="wallet-status" role="status" aria-live="polite"></p>
+        <button id="wallet-open-limits" class="wallet-limit-button" type="button" disabled><span class="limit-icon" aria-hidden="true">◇</span><span><strong data-text="limitsTitle">Payment limits</strong><small id="wallet-limit-summary" data-text="homeLimitsPending">View and set limits</small></span><span class="chevron" aria-hidden="true">›</span></button>
+        <button id="wallet-open-history" class="wallet-limit-button" type="button" disabled><span class="limit-icon" aria-hidden="true">◷</span><span><strong data-text="historyTitle">Payment records</strong><small data-text="historySubtitle">Model calls and fixed-price services</small></span><span class="chevron" aria-hidden="true">›</span></button>
+        <p class="wallet-agent-note" data-text="homeAgentNotice">Agent payments use this wallet and its limits.</p>
+        <div id="wallet-home-empty" hidden><p data-text="homeEmpty">Create or import a wallet to get started.</p><button id="home-open-profile" type="button" class="text-button" data-text="homeReconnect">Open existing wallet</button></div>
+        <div id="wallet-home-disconnected" hidden><p data-text="disconnectedDescription">Wallet state is unknown. Open the existing wallet to reconnect.</p><button id="home-reconnect-profile" type="button" class="text-button" data-text="homeReconnect">Open existing wallet</button></div>
+      </section>
+
+      <dialog id="wallet-rename-dialog" aria-labelledby="wallet-rename-title"><form id="wallet-rename-form">
+        <h2 id="wallet-rename-title" data-text="walletRename">Rename wallet</h2>
+        <label for="wallet-name-input" data-text="walletName">Wallet name</label><input id="wallet-name-input" maxlength="80" autocomplete="off">
+        <p id="wallet-name-status" role="status"></p><div class="actions"><button id="wallet-rename-cancel" type="button" data-text="cancel">Cancel</button><button id="wallet-name-save" type="submit" data-text="save">Save</button></div>
+      </form></dialog>
+      <dialog id="wallet-history-dialog"><header class="dialog-heading"><h2 data-text="historyTitle">Payment records</h2><div class="history-toolbar"><button id="wallet-refresh-history" type="button" data-text="refresh">Refresh</button><button id="wallet-close-history" class="icon-button" data-aria-text="homeClose" aria-label="Close">×</button></div></header><p id="wallet-history-status" role="status"></p><section id="wallet-history-list" aria-live="polite"></section><button id="wallet-more-history" type="button" hidden data-text="nextPage">Next page</button></dialog>
+      <dialog id="wallet-limits-dialog" aria-labelledby="wallet-limits-title"><header class="dialog-heading"><h2 id="wallet-limits-title" data-text="limitsTitle">Payment limits</h2><button id="wallet-close-limits" class="icon-button" data-aria-text="homeClose" aria-label="Close">×</button></header><section id="wallet-settings" hidden aria-live="polite"></section></dialog>
+      <dialog id="wallet-receive-dialog" aria-labelledby="general-receive-title"><header class="dialog-heading"><h2 id="general-receive-title" data-text="generalReceive">Receive</h2><button id="wallet-close-receive" class="icon-button" data-aria-text="homeClose" aria-label="Close">×</button></header>
+        <section id="general-receive-panel" hidden aria-labelledby="general-receive-title">
+          <label><span data-text="generalReceiveAsset">Asset</span><select id="general-receive-asset" disabled></select></label>
+          <p id="general-receive-assets-status" role="status" aria-live="polite"></p>
+          <p data-text="generalReceiveWarning">Only send assets using the selected network. This address does not bridge assets between networks.</p>
+          <p id="general-receive-account"></p>
+          <p id="general-receive-network"></p>
+          <p id="general-receive-contract"></p>
+          <p id="general-receive-address" class="address"></p>
+          <canvas id="general-receive-qr" width="198" height="198" hidden aria-label="Address QR code" data-aria-text="generalQrLabel"></canvas>
+          <div class="actions"><button id="general-copy-receive" type="button" disabled data-text="generalCopyAddress">Copy address</button></div>
+          <p id="general-receive-status" role="status" aria-live="polite"></p>
+        </section>
+      </dialog>
+      <dialog id="wallet-assets-dialog" aria-labelledby="wallet-assets-dialog-title"><header class="dialog-heading"><h2 id="wallet-assets-dialog-title" data-text="homeAssetSettings">Asset & RPC settings</h2><button id="wallet-close-assets" class="icon-button" data-aria-text="homeClose" aria-label="Close">×</button></header>
+      <section id="general-assets" aria-labelledby="general-assets-title">
+        <h3 id="general-assets-title" data-text="homeAssetSettings">Asset & RPC settings</h3>
+        <p hidden data-text="generalReadOnlyNotice">View the public address of an existing payment wallet. This view does not change the Skill payment wallet.</p>
+        <p data-text="generalRpcPrivacy">When you request a balance, the selected RPC provider receives the public address and network request.</p>
+        <div class="general-controls" hidden>
+          <label><span data-text="generalAccount">Account</span><select id="general-account" disabled></select></label>
+
+          <div class="actions">
+            <button id="general-load-networks" type="button" data-text="generalLoadNetworks">Load networks</button>
+
+
+          </div>
+        </div>
+        <details id="general-network-settings" hidden>
+          <summary data-text="generalNetworkSettings">Network visibility</summary>
+          <p data-text="generalNetworkSettingsNotice">These settings only change wallet display and never change Skill payments.</p>
+          <label><input id="general-show-testnets" type="checkbox"><span data-text="generalShowTestnets">Show test networks</span></label>
+          <div id="general-network-visibility" class="general-network-choices"></div>
+          <p id="general-network-settings-status" role="status" aria-live="polite"></p>
+        </details>
+        <details>
+          <summary data-text="generalRpcSettings">Read-only RPC endpoint</summary>
+          <p data-text="generalRpcSettingsNotice">Choose a fixed provider for this window. The provider receives the public address when you query balances or tokens. Skill payments and manual transfers are unaffected.</p>
+          <label><span data-text="generalRpcProvider">Provider and endpoint</span><select id="general-rpc-choice" disabled></select></label>
+          <button id="general-rpc-apply" type="button" disabled data-text="generalRpcApply">Apply endpoint</button>
+          <p id="general-rpc-status" role="status" aria-live="polite"></p>
+        </details>
+
+        <section id="custom-assets" aria-labelledby="custom-assets-title">
+          <h3 id="custom-assets-title" data-text="customAssetsTitle">Custom tokens</h3>
+          <p data-text="customAssetsPrivacy">Checking a token or refreshing its balance sends this account's public address to the selected network's RPC provider.</p>
+          <label><span data-text="customContract">Token contract address</span><input id="custom-contract" type="text" autocomplete="off" spellcheck="false" maxlength="42" /></label>
+          <div class="actions">
+            <button id="custom-inspect" type="button" data-text="customInspect">Check token</button>
+            <button id="custom-add" type="button" disabled data-text="customAdd">Add checked token</button>
+          </div>
+          <p id="custom-preview" role="status" aria-live="polite"></p>
+          <label id="custom-decimals-wrap" hidden><span data-text="customDecimals">Optional decimal places (unverified)</span><input id="custom-decimals" type="number" min="0" max="255" step="1" /></label>
+          <div class="actions">
+            <button id="custom-reload" type="button" data-text="customReload">Reload token list</button>
+            <button id="custom-refresh" type="button" data-text="customRefresh">Read token balances</button>
+            <button id="custom-prev" type="button" data-text="customPrevious">Previous</button>
+            <button id="custom-next" type="button" data-text="customNext">Next</button>
+          </div>
+          <p id="custom-status" role="status" aria-live="polite"></p>
+          <div id="custom-list" role="list" aria-labelledby="custom-assets-title"></div>
+        </section>
+        <fieldset id="general-all-networks" hidden>
+          <legend data-text="generalAllTitle">Balances across selected main networks</legend>
+          <p data-text="generalAllPrivacy">Select networks and request balances. Each selected RPC provider receives this wallet's public address. Test networks are excluded.</p>
+          <div id="general-all-choices" class="general-network-choices"></div>
+          <p id="general-preferences-status" role="status" aria-live="polite"></p>
+          <button id="general-all-read" type="button" disabled data-text="generalAllRead">Read selected networks</button>
+          <div id="general-all-result" role="status" aria-live="polite"></div>
+          <p data-text="generalAllScope">Only selected networks and listed assets are shown. Each network includes visible tokens from the first 20 added custom tokens. USD values are not available yet.</p>
+        </fieldset>
+        <p hidden data-text="generalScope">Native currency and selected verified tokens are shown; USD values, new wallets and transfers are not available yet.</p>
+      </section>
+      </dialog>
+      <div id="wallet-compat" hidden>
+
+      <h1 data-text="title">Wallet</h1>
+      <p data-text="description">View balances and receiving information across networks, and manage the existing Skill testnet payment wallet.</p>
+
+
+      <button id="open-skill-management" type="button" aria-controls="skill-management" data-text="skillPaymentManagement">Skill payment management</button>
+      <section aria-labelledby="general-setup-title">
+        <h2 id="general-setup-title" data-text="generalSetupTitle">General wallet accounts</h2>
+        <p data-text="generalSetupBoundary">General wallet accounts do not change the existing Skill payment wallet or its limits.</p>
+        <div class="actions">
+
+
+        </div>
+        <div id="general-import-options" hidden>
+          <p data-text="generalImportNotice">A recovery phrase may control other accounts and networks. A private key controls its corresponding account.</p>
+          <div class="actions">
+            <button id="general-import-mnemonic" type="button" data-text="generalImportMnemonic">12-word recovery phrase</button>
+            <button id="general-import-key" type="button" data-text="generalImportKey">Private key</button>
+          </div>
+        </div>
+
+      </section>
+      <div id="skill-management" tabindex="-1" aria-labelledby="skill-management-title">
+      <h2 id="skill-management-title" data-text="skillPaymentManagement">Skill payment management</h2>
+      <section id="disconnected" hidden aria-labelledby="disconnected-title">
+        <h2 id="disconnected-title" data-text="disconnectedTitle">Wallet service disconnected</h2>
+        <p data-text="disconnectedDescription">
+          Wallet state is unknown. Open the existing wallet to reconnect.
+        </p>
+        <button id="reopen-profile" data-text="openProfile">Open existing wallet</button>
+      </section>
+      <section id="setup" hidden aria-labelledby="setup-title">
+        <h2 id="setup-title" data-text="setupTitle">Wallet profile</h2>
+        <p data-text="setupDescription">
+          Open your existing wallet, or explicitly create a new profile for this installation.
+        </p>
+        <div class="actions">
+          <button id="open-profile" data-text="openProfile">Open existing wallet</button>
+          <button id="create-profile" data-text="createProfile">Create new profile</button>
+        </div>
+      </section>
+      <section id="wallets-section" hidden aria-labelledby="wallets-title">
+        <div class="heading">
+          <h2 id="wallets-title" data-text="walletsTitle">Wallets</h2>
+          <button id="create-wallet" data-text="createWallet">Create testnet wallet</button>
+        </div>
+        <p data-text="testnetNotice">Only Base Sepolia testnet wallets are available.</p>
+        <p id="empty" hidden data-text="empty">No wallet is configured in this profile.</p>
+        <div id="wallets"></div>
+      </section>
+
+
+      </div>
+      <p class="footnote" data-text="scopeNotice">
+        Wallet management and payment authorization are separate from your chat.
+      </p>
+      </div>
+    </main>
+  </body>
+</html>

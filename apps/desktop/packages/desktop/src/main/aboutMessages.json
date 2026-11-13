@@ -1,0 +1,14 @@
+{
+  "zh-CN": {
+    "aboutTitle": "关于 KoinCode",
+    "versionLabel": "版本",
+    "okButtonLabel": "确定",
+    "copyright": "版权所有 © {year} KoinCode。"
+  },
+  "en-US": {
+    "aboutTitle": "About KoinCode",
+    "versionLabel": "version",
+    "okButtonLabel": "OK",
+    "copyright": "Copyright © {year} KoinCode."
+  }
+}

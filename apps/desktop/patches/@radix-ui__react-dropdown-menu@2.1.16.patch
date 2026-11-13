@@ -1,0 +1,35 @@
+diff --git a/dist/index.js b/dist/index.js
+index 2087d670495a7664b83f0a910dbd09727a0b5679..16325a92ac3037b22c9620838d2dccd7b0190d55 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -137,7 +137,7 @@ var DropdownMenuTrigger = React.forwardRef(
+         "data-disabled": disabled ? "" : void 0,
+         disabled,
+         ...triggerProps,
+-        ref: (0, import_react_compose_refs.composeRefs)(forwardedRef, context.triggerRef),
++        ref: (0, import_react_compose_refs.useComposedRefs)(forwardedRef, context.triggerRef),
+         onPointerDown: (0, import_primitive.composeEventHandlers)(props.onPointerDown, (event) => {
+           if (!disabled && event.button === 0 && event.ctrlKey === false) {
+             context.onOpenToggle();
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 1799d5816f33aee1c512953bdd2acff61e91dd54..64329c28a59514b02452233f126d5213801541e7 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -3,7 +3,7 @@
+ // src/dropdown-menu.tsx
+ import * as React from "react";
+ import { composeEventHandlers } from "@radix-ui/primitive";
+-import { composeRefs } from "@radix-ui/react-compose-refs";
++import { useComposedRefs } from "@radix-ui/react-compose-refs";
+ import { createContextScope } from "@radix-ui/react-context";
+ import { useControllableState } from "@radix-ui/react-use-controllable-state";
+ import { Primitive } from "@radix-ui/react-primitive";
+@@ -70,7 +70,7 @@ var DropdownMenuTrigger = React.forwardRef(
+         "data-disabled": disabled ? "" : void 0,
+         disabled,
+         ...triggerProps,
+-        ref: composeRefs(forwardedRef, context.triggerRef),
++        ref: useComposedRefs(forwardedRef, context.triggerRef),
+         onPointerDown: composeEventHandlers(props.onPointerDown, (event) => {
+           if (!disabled && event.button === 0 && event.ctrlKey === false) {
+             context.onOpenToggle();
