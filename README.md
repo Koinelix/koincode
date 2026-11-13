@@ -1,27 +1,26 @@
 <p align="center">
   <img src="brand/koincode-logo.svg" alt="KoinCode" width="480">
 </p>
-<p align="center"><strong>KoinCode</strong>: Use LLMs with your wallet. No API key required.</p>
+<p align="center"><strong>KoinCode</strong>: An open-source LLM x402 agent.</p>
 <p align="center">
   <a href="https://github.com/Koinelix/koincode/releases"><img alt="Release" src="https://img.shields.io/github/v/release/Koinelix/koincode?style=flat-square"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/Koinelix/koincode?style=flat-square"></a>
 </p>
-<p align="center">English | <a href="README.zh-CN.md">简体中文</a></p>
+<p align="center"><a href="https://koinelix.com/">Website</a> | English | <a href="README.zh-CN.md">中文</a></p>
 
-KoinCode is a desktop AI agent for chatting, coding and working on local projects. Use a crypto wallet to pay in USDC for models on the [Koinelix platform](https://koinelix.com) through LLM 402 (x402), without requesting or configuring an LLM API key. Discover models, authorize USDC payments, complete AI tasks and review payment details in the app. The built-in provider is named **KoinCode** in the interface; it connects to Koinelix.
+KoinCode is an open-source desktop AI agent for LLM x402, bringing model discovery, payment authorization, model calls, and settlement details into one workflow. Chat, work on local code, and complete tasks with tools, MCP, and skills. The built-in [Koinelix](https://koinelix.com) integration provides x402-based model access without an LLM API key.
 
 **Current source version: 4.1.3.** Check the [Releases page](https://github.com/Koinelix/koincode/releases) for published installer versions and platforms.
 
-## LLM 402: from wallet to model results
+## LLM x402 agent workflow
 
-**Prepare a wallet → discover models → select a model → authorize payment → get a reply → review settlement.**
+**Create a task → choose a model → review the quote and authorize payment → execute the task → review results and settlement.**
 
-- **No LLM API key to configure**: discover models through the built-in KoinCode provider and pay for calls with your wallet.
-- **Pay in USDC**: each model call receives a quote through LLM 402 (x402). The authorization maximum and final settled charge are shown separately.
-- **Choose the authorization scope**: approve one request or the current session; wallet payment limits continue to apply.
-- **Put models to work**: chat, work on local code, and use tools, MCP and skills in your tasks.
-
-![LLM 402 walkthrough: wallet, models, authorization, reply and settlement](docs/images/demo.gif)
+- **LLM x402 access**: discover and select Koinelix models, with x402 connecting model requests to USDC payments.
+- **Agent task execution**: chat, work on local code, and complete tasks with tools, MCP, and skills.
+- **Controlled payment authorization**: approve one request or the current session, subject to wallet payment limits.
+- **Clear settlement details**: review actual charges, authorization maximums, and payment statuses.
+![LLM x402 agent walkthrough: tasks, models, authorization, replies and settlement](docs/images/demo.gif)
 
 This walkthrough combines English screens from the macOS app with the supplied payment-authorization screenshot and existing conversation and payment records. It illustrates the workflow rather than a continuous recording of a new paid task. Models, balances and amounts are examples from those screens; current availability and prices depend on the platform catalog and request quote.
 
@@ -38,31 +37,33 @@ The macOS package is for Macs with an M-series chip (M1, M2, M3, M4 and so on) o
 
 Each package comes with a same-named `.sha256` checksum file; verifying it after download is recommended.
 
-## Quick start: use LLMs with your wallet
+## Quick start: run your first LLM x402 task
 
-### 1. Open KoinCode and prepare a wallet
+### 1. Launch the app and discover models
 
-Install the package for your platform and launch KoinCode. If **Welcome to KoinCode** appears, choose **Skip for now** to enter the workspace. Open **Preferences → Wallet**, or use **Open wallet** in the built-in provider's model settings. Create or import a wallet if needed.
+Install the package for your platform and launch KoinCode. If **Welcome to KoinCode** appears, choose **Skip for now** to enter the workspace.
+
+Open **Preferences → Model settings** and select **KoinCode**. Click **Refresh models**, then enable the models you want. This built-in provider connects to Koinelix and does not require an API key or a new custom provider.
+
+![LLM x402 model access through the built-in KoinCode provider and available model list](docs/images/003.png)
+
+### 2. Create a task and select a model
+
+Return to the workspace and choose **New task**. Open the model selector in the composer, expand **KoinCode** and choose an enabled model. For local coding tasks, select the project directory and an appropriate permission level first. Before sending your first message, prepare payment as described in the next step.
+
+![English model selector for choosing a KoinCode model for an agent task](docs/images/004.png)
+
+### 3. Prepare payment for the first request
+
+Open **Preferences → Wallet**, or use **Open wallet** in the built-in provider's model settings. Create or import a wallet if needed.
 
 Check the network and use **Receive** to find the receiving address. Fund it with USDC on that network. Installed packages use Base mainnet, where model calls spend real USDC. **Payment limits (USDC)** shows the per-payment, 24-hour and total limits.
 
 <img src="docs/images/002.png" alt="English wallet showing Base mainnet, USDC balance, Receive and payment limits" width="480">
 
-### 2. Discover and enable models without an API key
+### 4. Send the request and review payment authorization
 
-Open **Preferences → Model settings** and select **KoinCode**. Click **Refresh models**, then enable the models you want. This built-in provider connects to Koinelix and does not require an API key or a new custom provider. Its **Open wallet** button takes you to the same wallet.
-
-![Built-in KoinCode provider: wallet payment, no API key and available models](docs/images/003.png)
-
-### 3. Select a model and start a task
-
-Return to the workspace and choose **New task**. Open the model selector in the composer, expand **KoinCode** and choose an enabled model. Send a message; for local coding tasks, select the project directory and an appropriate permission level first.
-
-![English model selector with the KoinCode provider and enabled models](docs/images/004.png)
-
-### 4. Review and authorize payment
-
-When payment authorization is needed, the **KoinCode Payment** window shows the **Maximum authorization**. Choose **This request only** or **This session**. Expand **Payment details** to review the request's payment information before approving. Session authorization can cover matching requests within its scope and wallet limits.
+Describe your goal in the task composer and send the message. When payment authorization is needed, the **KoinCode Payment** window shows the **Maximum authorization**. Choose **This request only** or **This session**. Expand **Payment details** to review the request's payment information before approving. Session authorization can cover matching requests within its scope and wallet limits.
 
 The amount shown here is an authorization ceiling, not the final charge. In this example the maximum is **0.145155 USDC**; check the settled amount in Payment history after the call.
 
@@ -72,7 +73,7 @@ The amount shown here is an authorization ceiling, not the final charge. In this
 
 The model's response appears in the task. The screenshot shows an existing English conversation using **KoinCode/gpt-6.1-sol**. Continue with follow-up questions or a project task; model requests use the applicable wallet authorization and limits.
 
-![English model reply in a KoinCode task with the selected wallet-paid provider](docs/images/006.png)
+![English reply and selected model in an LLM x402 agent task](docs/images/006.png)
 
 ### 6. Review actual charges and settlement details
 
@@ -89,7 +90,7 @@ For source development, the default is Base Sepolia with a local platform. Use t
 ## Features
 
 - Chat with an AI in a desktop window and work on local code after choosing a project directory.
-- Use wallet USDC payments to access Koinelix LLMs without an API key; OAuth accounts and custom API-key providers are also available.
+- Built-in LLM x402 access brings Koinelix model calls, payment authorization, and settlement details into the agent workflow; OAuth accounts and custom API-key providers are also available.
 - View subscription usage of Codex, Antigravity and Cline accounts inside the app.
 - Plugins, MCP, skills, subagents and workflows.
 - Import visible conversation history from Claude Code, Codex or Antigravity and continue chatting in KoinCode.

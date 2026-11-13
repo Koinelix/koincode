@@ -1,27 +1,26 @@
 <p align="center">
   <img src="brand/koincode-logo.svg" alt="KoinCode" width="480">
 </p>
-<p align="center"><strong>KoinCode</strong>：用钱包直接使用 LLM，无需 API key</p>
+<p align="center"><strong>KoinCode</strong>：开源的 LLM x402 智能体</p>
 <p align="center">
   <a href="https://github.com/Koinelix/koincode/releases"><img alt="Release" src="https://img.shields.io/github/v/release/Koinelix/koincode?style=flat-square"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/Koinelix/koincode?style=flat-square"></a>
 </p>
-<p align="center"><a href="README.md">English</a> | 简体中文</p>
+<p align="center"><a href="https://koinelix.com/">官网</a> | <a href="README.md">English</a> | 中文</p>
 
-KoinCode 是一款用于对话、编程和处理本地项目的桌面 AI Agent。通过加密货币钱包，以 USDC 支付 [Koinelix 平台](https://koinelix.com)的 LLM 调用费用，无需申请或配置 LLM API key。应用通过 LLM 402（x402）连接模型调用与钱包付款，让你在同一应用内完成模型发现、选择、付款授权、任务执行和付款明细查看。界面中的内置供应商名称为 **KoinCode**，连接的是 Koinelix 平台。
+KoinCode 是一款面向 LLM x402 的开源桌面 AI Agent，将模型发现、付款授权、模型调用和结算明细整合到任务流程中。你可以用它进行对话、处理本地代码，并结合工具、MCP 和技能完成任务。内置 [Koinelix](https://koinelix.com) 接入，通过 x402 使用模型，无需配置 LLM API key。
 
 **当前源码版本：4.1.3。** 已发布安装包的版本和平台请以 [Releases 页面](https://github.com/Koinelix/koincode/releases) 为准。
 
-## LLM 402：从钱包到模型结果
+## LLM x402 Agent 工作流
 
-**准备钱包 → 获取模型 → 选择模型 → 授权付款 → 获得回复 → 查看结算。**
+**创建任务 → 选择模型 → 核对报价并授权 → 执行任务 → 查看结果与结算。**
 
-- **无需配置 LLM API key**：通过内置 KoinCode 供应商获取模型，用钱包支付调用费用。
-- **使用 USDC 支付**：每次模型调用通过 LLM 402（x402）获取报价，授权上限与最终结算费用分别展示。
-- **选择授权范围**：可以授权单次请求或当前会话，付款仍受钱包限额约束。
-- **用于实际工作**：对话、处理本地代码，并结合工具、MCP 和技能完成任务。
-
-![LLM 402 流程演示：钱包、模型、授权、回复与结算](docs/images/demo.gif)
+- **LLM x402 接入**：获取并选择 Koinelix 模型，通过 x402 连接模型请求与 USDC 付款。
+- **Agent 任务执行**：对话、处理本地代码，并结合工具、MCP 和技能完成任务。
+- **可控的付款授权**：选择单次请求或当前会话授权，付款受钱包限额约束。
+- **清晰的结算信息**：查看实际费用、授权上限和付款状态。
+![LLM x402 Agent 流程演示：任务、模型、授权、回复与结算](docs/images/demo.gif)
 
 演示由 macOS 应用的英文界面、提供的付款授权截图及已有对话和付款记录组成，用于说明操作流程，并非一项新付费任务的连续录屏。图中的模型、余额和金额为当时界面的示例，当前可用模型与价格以平台目录及请求报价为准。
 
@@ -38,31 +37,33 @@ macOS 安装包仅适用于搭载 M 系列芯片（M1、M2、M3、M4 等）的 M
 
 每个安装包旁附有同名 `.sha256` 校验文件，下载后建议核对。
 
-## 快速开始：用钱包使用 LLM
+## 快速开始：运行第一个 LLM x402 任务
 
-### 1. 启动 KoinCode 并准备钱包
+### 1. 启动应用并获取模型
 
-安装对应平台的安装包并启动 KoinCode。如果出现 **Welcome to KoinCode**，选择 **Skip for now** 进入工作区。打开 **Preferences → Wallet**，或在内置供应商的模型设置中点击 **Open wallet**。尚无钱包时，先创建或导入钱包。
+安装对应平台的安装包并启动 KoinCode。如果出现 **Welcome to KoinCode**，选择 **Skip for now** 进入工作区。
+
+进入 **Preferences → Model settings**，选择 **KoinCode**。点击 **Refresh models**，启用需要的模型。这个内置供应商连接 Koinelix，无需填写 API key，也无需新增自定义供应商。
+
+![LLM x402 模型接入：内置 KoinCode 供应商及可用模型列表](docs/images/003.png)
+
+### 2. 创建任务并选择模型
+
+返回工作区，选择 **New task**。打开输入框中的模型选择菜单，展开 **KoinCode**，选择已启用的模型。处理本地代码时，先选择项目目录和适当的权限范围。首次发送消息前，按下一步准备付款。
+
+![英文模型选择菜单：为 Agent 任务选择 KoinCode 模型](docs/images/004.png)
+
+### 3. 准备首次请求的付款
+
+打开 **Preferences → Wallet**，或在内置供应商的模型设置中点击 **Open wallet**。尚无钱包时，先创建或导入钱包。
 
 核对当前网络，通过 **Receive** 查看收款地址，并转入该网络的 USDC。安装包使用 Base 主网，模型调用会支付真实 USDC。**Payment limits (USDC)** 展示单笔、24 小时与总付款限额。
 
 <img src="docs/images/002.png" alt="英文钱包界面：Base 主网、USDC 余额、收款入口和付款限额" width="480">
 
-### 2. 无需 API key，获取并启用模型
+### 4. 发送请求并核对付款授权
 
-进入 **Preferences → Model settings**，选择 **KoinCode**。点击 **Refresh models**，启用需要的模型。这个内置供应商连接 Koinelix，无需填写 API key，也无需新增自定义供应商。**Open wallet** 按钮打开同一个钱包。
-
-![内置 KoinCode 供应商：钱包支付、无需 API key 和可用模型列表](docs/images/003.png)
-
-### 3. 选择模型并发起任务
-
-返回工作区，选择 **New task**。打开输入框中的模型选择菜单，展开 **KoinCode**，选择已启用的模型并发送消息。处理本地代码时，先选择项目目录和适当的权限范围。
-
-![英文模型选择菜单：KoinCode 供应商及已启用模型](docs/images/004.png)
-
-### 4. 核对并授权付款
-
-需要付款授权时，**KoinCode Payment** 窗口会显示 **Maximum authorization**。选择 **This request only**（仅本次请求）或 **This session**（当前会话），展开 **Payment details** 核对本次请求的付款信息后再授权。会话授权可覆盖其范围内符合条件的请求，同时受钱包限额约束。
+在任务输入框中描述目标并发送消息。需要付款授权时，**KoinCode Payment** 窗口会显示 **Maximum authorization**。选择 **This request only**（仅本次请求）或 **This session**（当前会话），展开 **Payment details** 核对本次请求的付款信息后再授权。会话授权可覆盖其范围内符合条件的请求，同时受钱包限额约束。
 
 这里的金额是授权上限，并非最终费用。图中示例上限为 **0.145155 USDC**；调用后的实际结算金额请在 Payment history 中查看。
 
@@ -72,7 +73,7 @@ macOS 安装包仅适用于搭载 M 系列芯片（M1、M2、M3、M4 等）的 M
 
 模型回复会显示在任务中。截图展示已有的英文对话，所选模型为 **KoinCode/gpt-6.1-sol**。随后可继续追问或处理项目任务，模型请求使用适用的钱包授权并受限额约束。
 
-![KoinCode 任务中的英文模型回复及钱包支付供应商](docs/images/006.png)
+![LLM x402 Agent 任务中的英文模型回复及所选模型](docs/images/006.png)
 
 ### 6. 查看实际费用和结算详情
 
@@ -89,7 +90,7 @@ macOS 安装包仅适用于搭载 M 系列芯片（M1、M2、M3、M4 等）的 M
 ## 功能
 
 - 在桌面窗口中与 AI 对话，选择项目目录后处理本地代码。
-- 通过钱包 USDC 付款使用 Koinelix LLM，无需 API key；也支持 OAuth 账号与自带 API key 的模型供应商。
+- 内置 LLM x402 模型接入，将 Koinelix 模型调用、付款授权和结算明细纳入 Agent 工作流；也支持 OAuth 账号与自带 API key 的模型供应商。
 - 在应用内查看 Codex、Antigravity 和 Cline 账号的订阅套餐用量。
 - 支持插件、MCP、技能、子代理与工作流。
 - 导入 Claude Code、Codex 或 Antigravity 的可见对话历史，并在 KoinCode 中继续对话。
