@@ -8,21 +8,57 @@
 </p>
 <p align="center"><a href="https://koinelix.com/">Website</a> | English | <a href="README.zh-CN.md">中文</a></p>
 
-KoinCode is an open-source desktop AI agent for LLM x402, bringing model discovery, payment authorization, model calls, and settlement details into one workflow. Chat, work on local code, and complete tasks with tools, MCP, and skills. The built-in [Koinelix](https://koinelix.com) integration provides x402-based model access without an LLM API key.
+KoinCode is an open-source desktop AI agent that pays for its own model calls with [x402](https://www.x402.org/). Each model request is quoted over HTTP 402 and paid in USDC from a wallet on your machine, so there is no LLM API key to configure. Around that, it is a full agent: chat, work on local code, and complete tasks with tools, MCP, and skills.
 
 **Current source version: 4.1.3.** Check the [Releases page](https://github.com/Koinelix/koincode/releases) for published installer versions and platforms.
 
-## LLM x402 agent workflow
-
-**Create a task → choose a model → review the quote and authorize payment → execute the task → review results and settlement.**
-
-- **LLM x402 access**: discover and select Koinelix models, with x402 connecting model requests to USDC payments.
-- **Agent task execution**: chat, work on local code, and complete tasks with tools, MCP, and skills.
-- **Controlled payment authorization**: approve one request or the current session, subject to wallet payment limits.
-- **Clear settlement details**: review actual charges, authorization maximums, and payment statuses.
 ![LLM x402 agent walkthrough: tasks, models, authorization, replies and settlement](docs/images/demo.gif)
 
-This walkthrough combines English screens from the macOS app with the supplied payment-authorization screenshot and existing conversation and payment records. It illustrates the workflow rather than a continuous recording of a new paid task. Models, balances and amounts are examples from those screens; current availability and prices depend on the platform catalog and request quote.
+The walkthrough is assembled from app screenshots. Models, balances and amounts are examples; current availability and prices come from the platform catalog and each request's quote.
+
+## What LLM x402 means here
+
+HTTP has long reserved status code 402, "Payment Required". x402 puts it to use: a server answers a request with a price, the client attaches a signed payment, and the server completes the request. KoinCode applies this to LLM calls, with [Koinelix](https://koinelix.com) as the model service.
+
+- **No API key, no balance to top up.** USDC stays in your own wallet until a request is settled.
+- **Pay per request.** Every model request carries its own quote and its own payment.
+- **Authorize a maximum, pay for actual usage.** The wallet signs a ceiling for the request; the settled charge is the usage actually billed, and the rest of the reservation is released.
+- **You approve payments.** Approve a single request or the current session, always within the wallet's per-payment, 24-hour and total limits.
+- **Every charge is checkable.** Payment history shows the settled amount, the authorized maximum and the on-chain transaction reference.
+
+### How a paid model request works
+
+```mermaid
+sequenceDiagram
+    participant A as KoinCode agent
+    participant W as Local wallet
+    participant K as Koinelix x402 endpoint
+    participant B as Base (USDC)
+    A->>K: Model request
+    K-->>A: HTTP 402 with a payment quote
+    A->>W: Quote
+    W-->>A: Signed maximum authorization, after your approval
+    A->>K: Same request with the payment signature
+    K-->>A: Model response
+    K->>B: Settle the actual usage through the x402 facilitator
+    W->>B: Verify the settlement on chain
+```
+
+1. The agent sends a model request to the Koinelix x402 endpoint.
+2. The endpoint replies with HTTP 402 and a quote: asset, network, recipient and maximum amount.
+3. The local wallet checks the quote against your limits and authorizations. If approval is needed, the **KoinCode Payment** window asks you.
+4. The wallet signs an authorization for that maximum, and the agent repeats the request with the signature.
+5. The model runs and the reply streams into the task.
+6. The actual usage is settled in USDC on Base through the x402 facilitator. The wallet needs USDC only, not ETH for gas.
+7. The wallet verifies the settlement on chain and records the charge and the released reservation in **Payment history**.
+
+x402 payments in KoinCode currently work with the Koinelix endpoint only: Base mainnet in installed packages, Base Sepolia for source development.
+
+## Before you start
+
+- **Real funds.** Installed packages use Base mainnet, and model calls spend real USDC. Fund the wallet only with what you plan to spend.
+- **Unsigned macOS package.** macOS packages currently have no Developer ID signature or notarization, so macOS may block opening them. Download only from this project's Releases page and verify the checksum.
+- **Keys stay on your machine.** Wallet secrets are protected by the operating system's secure storage. Never post keys, recovery material, API keys or authorization callback URLs in issues, screenshots or logs.
 
 ## Download
 
@@ -35,98 +71,64 @@ Installers are published on the [Releases page](https://github.com/Koinelix/koin
 
 The macOS package is for Macs with an M-series chip (M1, M2, M3, M4 and so on) only and does not support Intel-based Macs. No installer is provided for Intel Macs yet; you can try building from source (`package.sh x64`, not verified by us).
 
-Each package comes with a same-named `.sha256` checksum file; verifying it after download is recommended.
+Each package comes with a same-named `.sha256` checksum file; verifying it after download is recommended. Using an installer does not require Node.js, pnpm or build commands. If your platform has no package, build from source.
 
 ## Quick start: run your first LLM x402 task
 
-### 1. Launch the app and discover models
+### 1. Launch the app and fund the wallet
 
 Install the package for your platform and launch KoinCode. If **Welcome to KoinCode** appears, choose **Skip for now** to enter the workspace.
+
+Open **Preferences → Wallet** and create or import a wallet. Check the network, use **Receive** to find the receiving address, and fund it with USDC on that network. **Payment limits (USDC)** shows the per-payment, 24-hour and total limits.
+
+<img src="docs/images/002.png" alt="English wallet showing Base mainnet, USDC balance, Receive and payment limits" width="480">
+
+### 2. Discover models
 
 Open **Preferences → Model settings** and select **KoinCode**. Click **Refresh models**, then enable the models you want. This built-in provider connects to Koinelix and does not require an API key or a new custom provider.
 
 ![LLM x402 model access through the built-in KoinCode provider and available model list](docs/images/003.png)
 
-### 2. Create a task and select a model
+### 3. Create a task and select a model
 
-Return to the workspace and choose **New task**. Open the model selector in the composer, expand **KoinCode** and choose an enabled model. For local coding tasks, select the project directory and an appropriate permission level first. Before sending your first message, prepare payment as described in the next step.
+Return to the workspace and choose **New task**. Open the model selector in the composer, expand **KoinCode** and choose an enabled model. For local coding tasks, select the project directory and an appropriate permission level first.
 
 ![English model selector for choosing a KoinCode model for an agent task](docs/images/004.png)
 
-### 3. Prepare payment for the first request
-
-Open **Preferences → Wallet**, or use **Open wallet** in the built-in provider's model settings. Create or import a wallet if needed.
-
-Check the network and use **Receive** to find the receiving address. Fund it with USDC on that network. Installed packages use Base mainnet, where model calls spend real USDC. **Payment limits (USDC)** shows the per-payment, 24-hour and total limits.
-
-<img src="docs/images/002.png" alt="English wallet showing Base mainnet, USDC balance, Receive and payment limits" width="480">
-
 ### 4. Send the request and review payment authorization
 
-Describe your goal in the task composer and send the message. When payment authorization is needed, the **KoinCode Payment** window shows the **Maximum authorization**. Choose **This request only** or **This session**. Expand **Payment details** to review the request's payment information before approving. Session authorization can cover matching requests within its scope and wallet limits.
+Describe your goal in the task composer and send the message. When payment authorization is needed, the **KoinCode Payment** window shows the **Maximum authorization**. Choose **This request only** or **This session**, and expand **Payment details** to review the request's payment information before approving. Session authorization covers matching requests within its scope and the wallet limits without asking again.
 
-The amount shown here is an authorization ceiling, not the final charge. In this example the maximum is **0.145155 USDC**; check the settled amount in Payment history after the call.
+The amount shown here is an authorization ceiling, not the final charge. In this example the maximum is **0.145155 USDC**.
 
 ![English payment authorization showing the maximum and request or session scope](docs/images/005.png)
 
 ### 5. Read the reply and continue working
 
-The model's response appears in the task. The screenshot shows an existing English conversation using **KoinCode/gpt-6.1-sol**. Continue with follow-up questions or a project task; model requests use the applicable wallet authorization and limits.
+The model's response appears in the task; the screenshot uses **KoinCode/gpt-6.1-sol**. Continue with follow-up questions or a project task. Each further model request is quoted and paid the same way, under the applicable authorization and limits.
 
 ![English reply and selected model in an LLM x402 agent task](docs/images/006.png)
 
 ### 6. Review actual charges and settlement details
 
-Open the wallet and choose **Payment history** to see amounts, statuses and settlement times. Read the displayed status to distinguish confirmed charges from pending reservations.
+Open the wallet and choose **Payment history** to see amounts, statuses and settlement times. The status distinguishes confirmed charges from pending reservations.
 
 <img src="docs/images/007.png" alt="English payment history listing model calls, USDC amounts, Confirmed status and settlement times" width="480">
 
-Expand a **Model call** row to inspect its network, request URL, authorized maximum, released reservation and transaction reference. The example below shows **0.035652 USDC** confirmed, an authorized maximum of **0.145155 USDC** and a released reservation of **0.109503 USDC**. These illustrate the difference between the authorization ceiling and the settled charge; they are not a fixed model price.
+Expand a **Model call** row to inspect its network, request URL, authorized maximum, released reservation and transaction reference. The example below shows **0.035652 USDC** confirmed against an authorized maximum of **0.145155 USDC**, with **0.109503 USDC** of the reservation released. The figures illustrate the difference between the ceiling and the settled charge; they are not a fixed model price.
 
 <img src="docs/images/008.png" alt="Expanded payment record with Base mainnet, actual amount, authorized maximum, released reservation and transaction reference" width="480">
 
-For source development, the default is Base Sepolia with a local platform. Use the mainnet startup option in the build instructions to connect to production. Testnet and mainnet USDC belong to separate networks.
-
-## Features
+## More features
 
 - Chat with an AI in a desktop window and work on local code after choosing a project directory.
-- Built-in LLM x402 access brings Koinelix model calls, payment authorization, and settlement details into the agent workflow; OAuth accounts and custom API-key providers are also available.
-- View subscription usage of Codex, Antigravity and Cline accounts inside the app.
 - Plugins, MCP, skills, subagents and workflows.
+- Other model connections: OAuth accounts and your own API keys, with in-app subscription usage for Codex, Antigravity and Cline accounts. See [Other model connections](docs/model-providers.md).
 - Import visible conversation history from Claude Code, Codex or Antigravity and continue chatting in KoinCode.
 - Configure SSH hosts in Preferences and use `/remote-host` with the built-in `remote-host-operations` skill to work with remote files and commands.
 - A built-in browser for viewing and operating web pages.
-- Computer Use operates local applications through screenshots and real mouse and keyboard input, with macOS and Windows desktop entry points (experimental; see below).
+- Computer Use operates local applications through screenshots and real mouse and keyboard input on macOS and Windows (experimental). See [Computer Use](docs/computer-use.md).
 - Workspaces, sessions and settings are stored on your machine.
-
-## Computer Use: operate local applications (experimental)
-
-Computer Use lets the model observe the screen, operate real applications and check the result in a fresh screenshot. For example, ask it to open a specified video in Jianying, export the complete audio as MP3 and save it to a chosen directory with a new filename. It uses your machine's foreground, mouse and keyboard; ordinary conversations do not automatically enable desktop control.
-
-1. Configure and select a model that supports image input through Koinelix or another provider.
-2. Start a new task, type `/` in the composer, select the official **computer-use** skill and describe the application, input file, output directory and expected result.
-3. At the first desktop observation, approve primary-display screenshots and real mouse and keyboard input for this task. Screenshots may include other applications and are sent to the selected model; KoinCode hides while operating. macOS requires version 14 or later and the requested screen recording, accessibility and event monitoring permissions.
-4. Press **physical Esc** to pause and take over, or return to the task panel in KoinCode and click **Pause / Stop**. Ordinary mouse movement, typing and application switching do not cancel the task. On macOS, KoinCode automatically yields its ordinary windows when brought forward, observes a fresh screenshot and continues. Use **Continue with Computer Use** to resume an explicitly paused task. Resolve missing permissions, a locked screen, Secure Input or a protected confirmation dialog manually before continuing.
-
-**Permission denied after updating KoinCode on macOS even though the switches are on?** The current ad-hoc signature can change between builds, so an old system grant may not apply to the new version. Quit KoinCode, remove its old entries in **System Settings → Privacy & Security → Accessibility** and **Screen & System Audio Recording**, then use **+** to add the currently installed KoinCode.app and enable its permissions. Restart KoinCode and explicitly select Computer Use for a new task. Grant access to the current KoinCode main application; do not add the bundled Helper separately or reset permissions for other applications.
-
-Version 4.1.2 improves screenshot context and the operation flow: model history retains at most the latest **three operation screenshots**, while earlier operation text and receipts remain. User-uploaded images are not removed by this rule and continue through the existing unified compression and media budget. The SDK can dispatch one logical action and observe its result in the same tool call, and the task panel distinguishes waiting for the model from active operation.
-
-Complete audio export through Jianying has been verified in a single-display development environment on an Apple silicon Mac. Windows has a desktop entry point, but the new screenshot optimization has not yet been retested on a real Windows machine. Intel Macs, multiple displays and the new installers still need separate compatibility checks. Results and duration depend on the model, application UI and system permissions; operation is not guaranteed for every application.
-
-## Other model connections
-
-For account access or your own API key, open **Preferences → Model settings → Add provider**.
-
-- **OAuth accounts**: choose Codex, Antigravity or another supported account and finish authorization in the browser. If automatic callback fails, paste this attempt's complete callback URL into **Complete callback URL** in the local app. Cline uses device-code authorization instead. Then refresh and enable the account's models.
-- **Your own API key**: choose a provider and enter its Base URL, API format and API key. Keep keys and authorization callbacks out of screenshots, Issues and logs.
-- **Account usage**: supported accounts show **Usage limits** on the account card; hover over the composer usage ring for available context and account limits. Access and quotas depend on the service. Codex's **Reset limits** consumes a reset credit.
-
-Choose an enabled model in the composer before sending a message. If the model list fails to load, try **Refresh models**; if the service asks for authorization again, restart the sign-in flow.
-
-## Installation notes
-
-Using an installer does not require Node.js, pnpm or build commands. By default, macOS packages have no Developer ID signature or notarization. Local builds containing the Computer Use Helper use ad-hoc signing, which is not an Apple-verified developer signature, so macOS may still block opening. Use this project's Releases page for installers; build from source if your platform has no package.
 
 ## Build from source
 
@@ -165,12 +167,14 @@ Useful options:
 
 #### Testnet and mainnet
 
-Choose the payment network when starting development. The network and Koinelix endpoint are paired in `apps/desktop/config/network.json`:
+Choose the payment network when starting development. The network and Koinelix endpoint are paired in `apps/desktop/config/network.json` and are not read from environment variables:
 
 ```bash
-./apps/desktop/run.sh            # Base Sepolia; local platform at http://127.0.0.1:8080/v1
+./apps/desktop/run.sh            # Base Sepolia; local platform at http://127.0.0.1:8080/v1 (must already be running)
 ./apps/desktop/run.sh mainnet    # Base mainnet; https://api.koinelix.com/v1; spends real USDC
 ```
+
+The default testnet mode expects a Koinelix platform on your own machine, which is not part of this repository. Without one, the built-in x402 models are unavailable in that mode; use `mainnet` to reach the hosted service, where model calls spend real USDC. Other model connections work in either mode.
 
 - The network is fixed at build time. Stop and restart with the desired argument to change it.
 - Wallet data is separate: `~/.koincode/wallet/m4-testnet` for testnet and `~/.koincode/wallet/mainnet` for mainnet. First-time mainnet payment requires registering the payment source through the existing system authentication flow (Touch ID on macOS).
@@ -216,6 +220,8 @@ These directories are local build output, ignored by `.gitignore` and never comm
 ## Feedback and contributing
 
 If you run into a problem or have a suggestion, please open an [issue](https://github.com/Koinelix/koincode/issues). Pull requests are welcome.
+
+This repository is published as snapshots of our development tree, and the test suites are not included yet. A change we accept is applied to the development tree and appears here in a later snapshot.
 
 ## Attribution and third-party licenses
 

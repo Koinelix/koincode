@@ -5,8 +5,9 @@ import type {
 } from "@fcode/adapters/model";
 import {
   resolveRuntimeFCodeEnv,
-  resolveRuntimeFCodeEndpointOrigin,
   FCODE_APP_VERSION_ENV,
+  KOINCODE_SOURCE_NAME,
+  KOINCODE_SOURCE_REFERER,
 } from "@fcode/shared";
 import {
   createRuntimePlatformHeaders,
@@ -53,10 +54,10 @@ function buildCliFCodeSourceHeaders(
   const locale = normalizePrintableHeaderValue(Intl.DateTimeFormat().resolvedOptions().locale);
   const timezone = normalizePrintableHeaderValue(Intl.DateTimeFormat().resolvedOptions().timeZone);
   return {
-    "HTTP-Referer": resolveRuntimeFCodeEndpointOrigin(env),
-    "User-Agent": `FCode/${appVersion ?? "unknown"}`,
+    "HTTP-Referer": KOINCODE_SOURCE_REFERER,
+    "User-Agent": `${KOINCODE_SOURCE_NAME}/${appVersion ?? "unknown"}`,
     ...(appVersion ? { "X-FCode-App-Version": appVersion } : {}),
-    "X-Title": `Z Code@${sourceTitle}`,
+    "X-Title": `${KOINCODE_SOURCE_NAME}@${sourceTitle}`,
     "X-Release-Channel": resolveRuntimeFCodeEnv(env),
     "X-Client-Language": locale ?? "unknown",
     "X-Client-Timezone": timezone ?? "unknown",

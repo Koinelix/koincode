@@ -1,9 +1,15 @@
 import { DEFAULT_FCODE_ENDPOINT_ORIGIN } from "./fcodeEndpoint.js";
 
+// Bug fix (2026-11-13): model requests still announced the upstream product (X-Title "Z Code@...",
+// User-Agent "FCode/...", Referer of the upstream endpoint) to every provider, including Koinelix.
+// Outbound requests identify this product; only calls to a first-party endpoint keep that endpoint's own origin as Referer.
+export const KOINCODE_SOURCE_NAME = "KoinCode";
+export const KOINCODE_SOURCE_REFERER = "https://koinelix.com";
+
 export const FCODE_SOURCE_HEADERS = {
-  "User-Agent": "FCode/unknown",
+  "User-Agent": `${KOINCODE_SOURCE_NAME}/unknown`,
   "HTTP-Referer": DEFAULT_FCODE_ENDPOINT_ORIGIN,
-  "X-Title": "Z Code@electron",
+  "X-Title": `${KOINCODE_SOURCE_NAME}@electron`,
 } as const;
 
 export interface BuildFCodeSourceHeadersFromContextOptions {
@@ -45,9 +51,9 @@ export function buildFCodeSourceHeadersFromContext(
   return {
     ...FCODE_SOURCE_HEADERS,
     "HTTP-Referer": endpointOrigin,
-    "User-Agent": `FCode/${appVersion ?? "unknown"}`,
+    "User-Agent": `${KOINCODE_SOURCE_NAME}/${appVersion ?? "unknown"}`,
     ...(appVersion ? { "X-FCode-App-Version": appVersion } : {}),
-    "X-Title": `Z Code@${sourceTitle}`,
+    "X-Title": `${KOINCODE_SOURCE_NAME}@${sourceTitle}`,
     ...(platform && arch ? { "X-Platform": `${platform}-${arch}` } : {}),
     ...(releaseChannel ? { "X-Release-Channel": releaseChannel } : {}),
     "X-Client-Language": clientLanguage,

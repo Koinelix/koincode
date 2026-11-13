@@ -1,0 +1,16 @@
+English | [中文](computer-use.zh-CN.md)
+
+# Computer Use: operate local applications (experimental)
+
+Computer Use lets the model observe the screen, operate real applications and check the result in a fresh screenshot. For example, ask it to open a specified video in Jianying, export the complete audio as MP3 and save it to a chosen directory with a new filename. It uses your machine's foreground, mouse and keyboard; ordinary conversations do not automatically enable desktop control.
+
+1. Configure and select a model that supports image input through Koinelix or another provider.
+2. Start a new task, type `/` in the composer, select the official **computer-use** skill and describe the application, input file, output directory and expected result.
+3. At the first desktop observation, approve primary-display screenshots and real mouse and keyboard input for this task. Screenshots may include other applications and are sent to the selected model; KoinCode hides while operating. macOS requires version 14 or later and the requested screen recording, accessibility and event monitoring permissions.
+4. Press **physical Esc** to pause and take over, or return to the task panel in KoinCode and click **Pause / Stop**. Ordinary mouse movement, typing and application switching do not cancel the task. On macOS, KoinCode automatically yields its ordinary windows when brought forward, observes a fresh screenshot and continues. Use **Continue with Computer Use** to resume an explicitly paused task. Resolve missing permissions, a locked screen, Secure Input or a protected confirmation dialog manually before continuing.
+
+**Permission denied after updating KoinCode on macOS even though the switches are on?** The current ad-hoc signature can change between builds, so an old system grant may not apply to the new version. Quit KoinCode, remove its old entries in **System Settings → Privacy & Security → Accessibility** and **Screen & System Audio Recording**, then use **+** to add the currently installed KoinCode.app and enable its permissions. Restart KoinCode and explicitly select Computer Use for a new task. Grant access to the current KoinCode main application; do not add the bundled Helper separately or reset permissions for other applications.
+
+Version 4.1.2 improves screenshot context and the operation flow: model history retains at most the latest **three operation screenshots**, while earlier operation text and receipts remain. User-uploaded images are not removed by this rule and continue through the existing unified compression and media budget. The SDK can dispatch one logical action and observe its result in the same tool call, and the task panel distinguishes waiting for the model from active operation.
+
+Complete audio export through Jianying has been verified in a single-display development environment on an Apple silicon Mac. Windows has a desktop entry point, but the new screenshot optimization has not yet been retested on a real Windows machine. Intel Macs, multiple displays and the new installers still need separate compatibility checks. Results and duration depend on the model, application UI and system permissions; operation is not guaranteed for every application.
