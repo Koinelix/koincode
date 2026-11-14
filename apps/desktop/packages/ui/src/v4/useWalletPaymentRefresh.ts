@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { IPlatformService, WalletPaymentActivity } from "@fcode/shared";
 import { validActivity } from "./walletPaymentActivityModel.js";
 
@@ -12,36 +12,23 @@ export function useWalletPaymentRefresh(wallet: IPlatformService["walletUi"] | u
   accept: (scope: string, activity: WalletPaymentActivity) => void) {
   const latest = useRef({ scopeKey, activities, active });
   latest.current = { scopeKey, activities, active };
-  const [failureState, setFailureState] = useState<{ scope: string; ids: string[] }>({ scope: "", ids: [] });
   const wake = useRef<(() => void) | undefined>(undefined);
   const budgets = useRef(new Map<string, Budget>());
-  const running = useRef(new Map<string, Promise<boolean>>());
-  const refresh = useCallback((activity: WalletPaymentActivity): Promise<boolean> => {
+  const running = useRef(new Map<string, Promise<void>>());
+  const refresh = useCallback((activity: WalletPaymentActivity): Promise<void> => {
     if (!wallet?.listPaymentActivity || !sessionId || latest.current.scopeKey !== scopeKey ||
         !validActivity(activity, { workspaceKey, sessionId }) || !activity.paymentId ||
         !latest.current.activities.some(item => item.invocationId === activity.invocationId && item.paymentId === activity.paymentId))
-      return Promise.resolve(false);
+      return Promise.resolve();
     const key = JSON.stringify([scopeKey, activity.invocationId, activity.paymentId]);
     const existing = running.current.get(key);
     if (existing) return existing;
-    const report = (failed: boolean) => {
-      if (latest.current.scopeKey !== scopeKey) return;
-      setFailureState(previous => {
-        const ids = new Set(previous.scope === scopeKey ? previous.ids : []);
-        if (failed) ids.add(activity.invocationId); else ids.delete(activity.invocationId);
-        return { scope: scopeKey, ids: [...ids] };
-      });
-    };
     const work = Promise.resolve().then(() => wallet.listPaymentActivity!({ workspaceKey, sessionId, refresh: true, paymentId: activity.paymentId })).then(items => {
-      if (latest.current.scopeKey !== scopeKey) return false;
-      if (!Array.isArray(items)) { report(true); return false; }
+      if (latest.current.scopeKey !== scopeKey || !Array.isArray(items)) return;
       const item = items.find(value => validActivity(value, { workspaceKey, sessionId }) &&
         value.invocationId === activity.invocationId && value.paymentId === activity.paymentId);
-      if (!item) { report(true); return false; }
-      accept(scopeKey, item);
-      report(false);
-      return true;
-    }).catch(() => { report(true); return false; }).finally(() => {
+      if (item) accept(scopeKey, item);
+    }).catch(() => { /* Keep the last known status until the next scheduled lookup. */ }).finally(() => {
       running.current.delete(key);
       if (latest.current.scopeKey === scopeKey) wake.current?.();
     });
@@ -81,5 +68,4 @@ export function useWalletPaymentRefresh(wallet: IPlatformService["walletUi"] | u
       document.removeEventListener("visibilitychange", schedule);
     };
   }, [active, wallet, sessionId, scopeKey, activities, refresh]);
-  return { refresh, failedInvocations: failureState.scope === scopeKey ? failureState.ids : [] };
 }

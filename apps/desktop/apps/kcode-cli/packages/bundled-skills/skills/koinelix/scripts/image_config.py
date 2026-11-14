@@ -10,6 +10,14 @@ from wallet_client import ClientError
 
 MAX_CONFIG_BYTES = 16 * 1024
 
+# Default service endpoint for each fixed wallet payment network. A host that
+# reports its network gets the matching endpoint, so the endpoint and the
+# wallet network cannot disagree.
+NETWORK_ENDPOINTS = {
+    "eip155:8453": "https://api.koinelix.com/v1/images/generations",
+    "eip155:84532": "http://127.0.0.1:8080/v1/images/generations",
+}
+
 
 def _unique_object(pairs):
     value = {}
@@ -84,6 +92,20 @@ def read_config():
         return validated_url(value["url"])
     except (OSError, ValueError, UnicodeError):
         raise ClientError("IMAGE_CONFIG_INVALID") from None
+
+
+def default_url(payment_network):
+    """Return the endpoint for a new request that has no explicit URL.
+
+    A host that reports its payment network selects the built-in endpoint and
+    the user configuration file is not read: that file is global and cannot
+    tell networks apart. Only a host that reports no network uses the file.
+    """
+    if payment_network is None:
+        return read_config()
+    if not isinstance(payment_network, str) or payment_network not in NETWORK_ENDPOINTS:
+        raise ClientError("IMAGE_CONFIG_INVALID")
+    return validated_url(NETWORK_ENDPOINTS[payment_network])
 
 
 def write_config(url):

@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 
-// 桌面打包态的 agent 运行时资产：把 agent 的 JS bundle（fcode.cjs）放进 bundled-agents/<platform>/glm，
-// 由 app 内置的 Electron Node runtime（ELECTRON_RUN_AS_NODE）执行，替代以前随包内置的独立 Node 二进制。
+// Agent runtime assets for the packaged desktop app: put the agent's JS bundle (fcode.cjs) into
+// bundled-agents/<platform>/glm. The app's built-in Electron Node runtime (ELECTRON_RUN_AS_NODE)
+// executes it, replacing the standalone Node binary that used to ship with the package.
 //
-// 为什么这么做：
-// - agent 没有任何原生 NAPI 插件（ripgrep 是 WASM，其余纯 JS），可直接跑在 Electron 的 Node 上；
-// - Electron 41 内置 Node 24.x，与 fcode-cli 的目标运行时一致；
-// - 单平台体积从 ~180MB 降到 ~16MB，且同一份 JS 跨平台通用；
-// - app-server 命令路径不会加载 @fcode/tui，所以这里天然不打包 TUI。
+// Why:
+// - The agent has no native NAPI addons (ripgrep is WASM, the rest is pure JS), so it runs directly on Electron's Node.
+// - Electron 41 embeds Node 24.x, which matches the target runtime of fcode-cli.
+// - Per-platform size drops from ~180MB to ~16MB, and the same JS works on every platform.
+// - The app-server command path never loads @fcode/tui, so the TUI is naturally left out here.
 //
-// 远端（SSH/WSL/Docker）没有 Electron，仍走 prepare:remote-assets 的原生二进制，互不影响。
+// Remote targets (SSH/WSL/Docker) have no Electron and still use the native binaries from prepare:remote-assets; the two paths are independent.
 
 import { cpSync, existsSync, mkdirSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
@@ -32,8 +33,8 @@ const pnpmRunEnv = {
 };
 const BROWSER_USE_PLUGIN_PACKAGE_NAME = "@fcode/browser-use-plugin";
 
-// 平台目录命名：darwin/win32/linux + x64/arm64，
-// 支持 FCODE_TARGET_OS / FCODE_TARGET_ARCH 覆盖（交叉打包时由 CI 注入）。
+// Platform directory naming: darwin/win32/linux + x64/arm64.
+// FCODE_TARGET_OS / FCODE_TARGET_ARCH override it (injected by CI when cross-packaging).
 function normalizePlatform(raw) {
   switch (raw) {
     case "mac":
@@ -71,19 +72,21 @@ const arch = normalizeArch(process.env.FCODE_TARGET_ARCH || "") || process.arch;
 const platformKey = `${platform}-${arch}`;
 
 const glmDir = resolve(desktopRoot, "bundled-agents", platformKey, "glm");
-// fcode.cjs / .node-bundle-meta.json 的落点由 stage-agent-bundle.mjs 自己解析（同源）。
-// node_repl 宿主抽成独立包
-// @fcode/node-repl-host 之后，browser-use 不再产出 dist/mcp/server.js，CUA 资产
-// （docs/computer-use.md、scripts/computer-use-client.mjs）也已归 @fcode/cua-plugin。
-// 这份清单当时漏改，打包准备阶段照旧去 browser-use 要那三个文件，直接 missing runtime 挂掉。
-// dev 链路走的是 scripts/build-desktop-agent-cli.mjs 的 requiredDevPluginRuntimeBuilds（那份改对了），
-// 两份平行清单各自维护，所以 dev 测不出来 —— 权威归属见 bootstrap/official-plugin-definitions.ts。
+// stage-agent-bundle.mjs resolves where fcode.cjs / .node-bundle-meta.json land (single source).
+// After the node_repl host was split into the standalone @fcode/node-repl-host package,
+// browser-use stopped producing dist/mcp/server.js, and the CUA assets
+// (docs/computer-use.md, scripts/computer-use-client.mjs) moved to @fcode/cua-plugin.
+// This list was not updated at the time, so packaging kept asking browser-use for those three
+// files and failed with a missing runtime. The dev path uses requiredDevPluginRuntimeBuilds in
+// scripts/build-desktop-agent-cli.mjs (which was updated correctly). The two parallel lists are
+// maintained separately, so dev could not catch it. The authoritative ownership is in
+// bootstrap/official-plugin-definitions.ts.
 const browserUseRequiredRuntimePaths = [
   "scripts/browser-client.mjs",
   "docs/api.json",
   "docs/documents.json",
   "docs/overview.md",
-  // documents.json 已暴露 recording lookup，桌面安装包不能复用缺少正文的 runtime。
+  // documents.json already exposes the recording lookup; the desktop installer must not reuse a runtime that lacks the body.
   "docs/recording.md",
   "docs/workflow.md",
   "skills/control-browser/SKILL.md",
@@ -98,6 +101,17 @@ const officialPluginPackages = [
     stagedPath: "packages/remote-host-plugin",
   },
   {
+    // The wallet plugin ships only a manifest and a skill: no package.json, no runtime.
+    // Without it the packaged app's filesystem seed cannot find koin-wallet, the host
+    // never mounts the koincode_wallet MCP server, and every skill that depends on
+    // wallet_run_client (such as koinelix) is unusable in the installed build.
+    packageName: "koin-wallet-plugin",
+    relativePath: "apps/kcode-cli/packages/koin-wallet-plugin",
+    requiresRuntime: false,
+    requiredSeedPaths: ["skills/wallet-http/SKILL.md"],
+    stagedPath: "packages/koin-wallet-plugin",
+  },
+  {
     packageName: "@fcode/computer-use-plugin",
     relativePath: "apps/kcode-cli/packages/fcode-cua-plugin",
     requiresRuntime: false,
@@ -105,8 +119,8 @@ const officialPluginPackages = [
     stagedPath: "packages/fcode-cua-plugin",
   },
   {
-    // browser-use 只携带自己的 client script 与 skill/docs；node_repl MCP runtime 归
-    // @fcode/node-repl-host（见上方常量注释）。
+    // browser-use carries only its own client script and skill/docs; the node_repl MCP runtime
+    // belongs to @fcode/node-repl-host (see the comment on the constant above).
     packageName: "@fcode/browser-use-plugin",
     relativePath: "apps/kcode-cli/packages/browser-use-plugin",
     requiresRuntime: true,
@@ -116,9 +130,9 @@ const officialPluginPackages = [
   },
 
   {
-    // node_repl 宿主：Browser Use 与 Computer Use 共用的 MCP runtime，本轮抽成独立包。
-    // 它没有 listing（不进插件市场展示面），但生产包首启 seed 必须拿到它的 dist runtime，
-    // 否则 bua/cua 任一开启时都会连不上 node_repl。
+    // node_repl host: the MCP runtime shared by Browser Use and Computer Use, now a standalone package.
+    // It has no listing (it is not shown in the plugin marketplace), but the first-launch seed of the
+    // production build must get its dist runtime; otherwise node_repl is unreachable whenever bua or cua is enabled.
     packageName: "@fcode/node-repl-host",
     relativePath: "apps/kcode-cli/packages/node-repl-host",
     requiresRuntime: true,
@@ -131,7 +145,7 @@ const includedOfficialPluginTopLevelPaths = new Set([
   ".mcp.json",
   ".fcode-plugin",
   "README.md",
-  // Electron 生产资源复制有独立白名单，遗漏 agents 会让首启 filesystem seed 永久缺少子代理。
+  // Electron production resource copying has its own allowlist; omitting agents leaves the first-launch filesystem seed permanently without subagents.
   "agents",
   "commands",
   "dist",
@@ -158,7 +172,7 @@ const isBootstrapWithRemote = process.env.FCODE_BOOTSTRAP_WITH_REMOTE === "1";
 
 function buildCliBundle() {
   console.log("[prepare:agent-bundle] building fcode-cli app-server bundle ...");
-  // 复用仓库根脚本（turbo build:desktop-agent --filter=@fcode/cli），命中缓存时几乎瞬时。
+  // Reuse the repo root script (turbo build:desktop-agent --filter=@fcode/cli); it is near-instant on a cache hit.
   runCommand(process.execPath, [resolve(repoRoot, "scripts/build-desktop-agent-cli.mjs")], {
     cwd: repoRoot,
     env: pnpmRunEnv,
@@ -204,11 +218,11 @@ function buildOfficialPluginRuntimeForBootstrap(plugin) {
     return;
   }
 
-  // bootstrap:with-remote 会连续构建 remote assets 和桌面 agent bundle。
-  // 通过 pnpm/filter 进入插件 build 时，tsc shim 在本地低内存环境中容易被 SIGKILL；
-  // 这里仅在 bootstrap 开关下用当前 Node 直接执行等价 tsc + build-mcp，不改变插件自身 build 脚本。
-  // browser-use 的 server 与 browser-client 是同一发布对；即使旧 server.js 存在也必须重建，
-  // 否则会把旧 server 与当前 client（或缺失 client）一起 stage 到桌面安装包。
+  // bootstrap:with-remote builds the remote assets and the desktop agent bundle back to back.
+  // When the plugin build is entered through pnpm/filter, the tsc shim is easily SIGKILLed on a low-memory machine.
+  // Only under the bootstrap switch, run the equivalent tsc + build-mcp directly with the current Node; the plugin's own build script is unchanged.
+  // The browser-use server and browser-client are one release pair: rebuild even when an old server.js exists,
+  // otherwise the old server gets staged into the desktop installer with the current (or missing) client.
   runCommand(process.execPath, ["../../node_modules/typescript/bin/tsc"], {
     cwd: pluginRoot,
     env: process.env,
@@ -230,8 +244,8 @@ function assertOfficialPluginRuntime(plugin) {
 }
 
 function stageBundle() {
-  // 实现已抽到 stage-agent-bundle.mjs：dev 链（scripts/build-desktop-agent-cli.mjs）
-  // 必须用同一份，否则 dev 会继续跑上一次打包留下的陈旧 agent。
+  // The implementation lives in stage-agent-bundle.mjs: the dev path (scripts/build-desktop-agent-cli.mjs)
+  // must use the same one, otherwise dev keeps running the stale agent left by the previous packaging run.
   stageAgentBundle({ repoRoot, platformKey });
 }
 
@@ -265,12 +279,14 @@ function stageOfficialPlugins() {
   }
 }
 
-// Electron 生产包只带 resources/glm/fcode.cjs 时，app-server 进程的
-// __dirname 附近没有官方插件目录，启动时 seed 找不到 source，用户侧不会自动得到内置插件。
-// 这里把官方插件按 bootstrap 的 rootCandidates 期望放到 glm/packages/*-plugin，
-// 让 Electron Node 运行 fcode.cjs 时复用同一套 filesystem seed 逻辑。
-// browser-use runtime 的声明生成依赖 @fcode/core/dist。CI 干净检出没有该产物，
-// 必须先构建 CLI 依赖，再构建官方插件；开发机残留的 dist 曾掩盖这个顺序问题。
+// When the Electron production build ships only resources/glm/fcode.cjs, there is no official plugin
+// directory near the app-server process's __dirname, the startup seed finds no source, and users do
+// not get the built-in plugins automatically. Place the official plugins where bootstrap's
+// rootCandidates expect them (glm/packages/*-plugin) so that Electron Node running fcode.cjs reuses
+// the same filesystem seed logic.
+// Declaration generation for the browser-use runtime depends on @fcode/core/dist, which a clean CI
+// checkout does not have. Build the CLI dependencies first, then the official plugins; a leftover
+// dist on developer machines used to hide this ordering problem.
 buildCliBundle();
 buildOfficialPluginRuntimes();
 stageBundle();

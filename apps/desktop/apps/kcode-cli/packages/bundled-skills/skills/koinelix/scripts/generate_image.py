@@ -16,7 +16,7 @@ import uuid
 sys.dont_write_bytecode = True
 
 from image_result import MAX_RESPONSE_BYTES, atomic_write, save_result
-from image_config import read_config, validated_url
+from image_config import default_url, validated_url
 from wallet_client import ClientError, WalletClient
 from request_store import read_state, request_lock, bind_task_request, annotate_operation_error
 from request_options import request_body, access_options, assert_access, credential_for
@@ -98,8 +98,13 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
+# Identify this client explicitly. The Python default ("Python-urllib/x.y") is
+# rejected by common edge protection before the request reaches the service.
+USER_AGENT = "koinelix-image-client/1"
+
+
 def request_http(url, body, key, business_key, payment=None):
-    headers = {"Content-Type": "application/json",
+    headers = {"Content-Type": "application/json", "User-Agent": USER_AGENT,
                "Idempotency-Key": business_key, "Accept-Encoding": "identity"}
     if key is not None:
         headers["Authorization"] = "Bearer " + key
@@ -160,8 +165,10 @@ def reconcile_response(client, state, headers):
 
 
 def execute(client, args):
-    url = validated_url(args.url) if args.url is not None else (None if args.recover else read_config())
+    url = validated_url(args.url) if args.url is not None else None
     context = client.call("context")
+    if url is None and not args.recover:
+        url = default_url(context.get("paymentNetwork"))
     directory = Path(context["stateDirectory"])
     output = Path(context["outputDirectory"])
     if args.recover:

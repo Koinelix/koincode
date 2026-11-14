@@ -37,6 +37,8 @@ function input(value: Record<string, unknown>): Input {
 export class DesktopWalletClientRunner {
   constructor(private readonly options: {
     directory: string;
+    /** The wallet's fixed payment network. A client may use it to choose a matching service endpoint. */
+    paymentNetwork: "eip155:8453" | "eip155:84532";
     credentials?: ServiceCredentialStore;
     nodeExecutable: string;
     paymentActivity?: {
@@ -104,6 +106,7 @@ export class DesktopWalletClientRunner {
       if (method === "context") {
         if (Object.keys(params).length) throw failure("INVALID_REQUEST");
         return { protocolVersion: 1, stateDirectory: state, outputDirectory: output,
+          paymentNetwork: this.options.paymentNetwork,
           taskId: hash(JSON.stringify([context.agent.workspaceKey, context.input.invocation.sessionId, context.input.invocation.turnId])) };
       }
       if (method === "credential.read") {

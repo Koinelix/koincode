@@ -36,8 +36,6 @@ export type ConversationFileChangesState = Exclude<
 
 export interface ConversationRowRenderContext {
   walletPaymentActivity?: readonly WalletPaymentActivity[];
-  walletPaymentRefreshFailures?: readonly string[];
-  onWalletPaymentActivityRefresh?: (activity: WalletPaymentActivity) => Promise<boolean>;
   onWalletPaymentActivityPresented?: (activity: WalletPaymentActivity) => Promise<boolean>;
   logEpoch?: string;
   workspacePath: string;

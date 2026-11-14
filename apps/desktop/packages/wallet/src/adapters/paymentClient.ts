@@ -97,7 +97,7 @@ export function createAuthenticatedPaymentClient(options: {
           amountAtomic: record.amountAtomic, network: record.network,
           ...(record.hostActivity && options.scopeToSession ? { hostActivity: record.hostActivity } : {}),
           ...(options.scopeToSession ? { quote: { digest: quote.digest, amountAtomic: quote.selected.amount, network: quote.selected.network,
-            asset: quote.selected.asset, assetSymbol: quote.selected.extra.name, payTo: quote.selected.payTo,
+            asset: quote.selected.asset, assetSymbol: networkConfig(quote.selected.network).assetSymbol, payTo: quote.selected.payTo,
             ...(assetDecimals === undefined ? {} : { assetDecimals, authorizationScope }) } } : {}) };
       }
       if (method === "read_model_binding") {

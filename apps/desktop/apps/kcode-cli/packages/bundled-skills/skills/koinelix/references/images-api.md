@@ -1,6 +1,6 @@
 # Image API compatibility
 
-The [OpenAPI snapshot](openapi.yaml) originated from public discovery on 2026-11-02. Its image request schema was aligned with the platform's current contract and default-model resolver on 2026-11-06. JSON is valid YAML. No credential is embedded. A contract snapshot does not prove the running deployment is enabled or that payment is accepted.
+The [OpenAPI snapshot](openapi.yaml) holds the two image operations of the production service's public contract (`https://api.koinelix.com/openapi.json`), refreshed on 2026-11-14. JSON is valid YAML. No credential is embedded. A contract snapshot does not prove the running deployment is enabled or that payment is accepted.
 
 New requests use model-v1 and anonymous_x402 by default. `--prompt <text>` sends only `{"prompt":"<text>"}`; the server selects its configured default published model. An explicitly selected `--model <published-id>` is sent unchanged. Empty or malformed explicit model IDs are rejected. Model-v1 excludes legacy size, quality and output options; reference-image fields are documented by the platform but are not exposed by this text-to-image client.
 

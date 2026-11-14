@@ -55,7 +55,7 @@ The wallet independently validates the offered x402 v2 exact challenge, supporte
 
 The official host integration provides `wallet_run_client` for an explicitly selected independent Python or Node client. It injects the same payment protocol through private fd 3 and binds the connection to the real invocation. It is an optional host adapter, not a requirement for other applications and not a wallet script executor.
 
-The host additionally provides `context` (session-owned state/output directories and a stable task identity) and optional `credential.read` (a separately configured, exact-target service credential). These are host services and are absent from the wallet protocol. Scripts may instead use their own credential provider. Neither service grants payment authority.
+The host additionally provides `context` (session-owned state/output directories, a stable task identity, and `paymentNetwork`, the wallet's fixed payment network, which a client may use to choose a matching service endpoint) and optional `credential.read` (a separately configured, exact-target service credential). These are host services and are absent from the wallet protocol. Scripts may instead use their own credential provider. Neither service grants payment authority.
 
 Hosted `authorize_payment` takes `{paymentId}`: the proxy supplies the original digest from this invocation's preparation. Hosted operations are scoped to the current trusted session. The host never exposes a client token or payment material to the model. It accepts only a bounded result receipt, not arbitrary stdout/stderr:
 

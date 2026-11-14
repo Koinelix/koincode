@@ -72,12 +72,11 @@ function isVisible(element: HTMLElement): boolean {
   });
 }
 
-function WalletPaymentActivityCard({ activity, onPresented, onRefresh, refreshFailed }: { activity: WalletPaymentActivity; onPresented?: Presented; onRefresh?: Presented; refreshFailed: boolean }) {
+function WalletPaymentActivityCard({ activity, onPresented }: { activity: WalletPaymentActivity; onPresented?: Presented }) {
   const { intl } = useFCodeIntl();
   const ref = useRef<HTMLDivElement>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const walletUi = useOptionalPlatform()?.walletUi;
-  const [refreshing, setRefreshing] = useState(false);
   const [opening, setOpening] = useState(false);
   const [openFailed, setOpenFailed] = useState(false);
   const openWallet = async () => {
@@ -171,16 +170,6 @@ function WalletPaymentActivityCard({ activity, onPresented, onRefresh, refreshFa
       {activity.status === "unknown" && activity.confirmationState ? <p className="px-4 pb-3 text-ui-sm text-[var(--color-foreground-subtle)]">
         {intl.formatMessage({ id: "wallet.activity.confirmationEnded" })}
       </p> : null}
-      {onRefresh && activity.paymentId && ["pending", "unknown"].includes(activity.status) ? <div className="flex flex-col items-start gap-2 border-t border-[var(--color-border)] px-4 py-3">
-        <button type="button" disabled={refreshing} onClick={() => {
-          if (refreshing) return;
-          setRefreshing(true);
-          void onRefresh(activity).finally(() => setRefreshing(false));
-        }} className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-ui-sm disabled:opacity-50">
-          {intl.formatMessage({ id: refreshing ? "wallet.activity.refreshing" : "wallet.activity.refresh" })}
-        </button>
-        {refreshFailed ? <p role="alert" className="text-ui-sm text-destructive">{intl.formatMessage({ id: "wallet.activity.refreshFailed" })}</p> : null}
-      </div> : null}
       {hasPaymentDetails ? <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
         <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 border-t border-[var(--color-border)] px-4 py-2.5 text-left text-ui-sm text-[var(--color-foreground-subtle)] hover:bg-[var(--color-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-input-border-focused)]">
           <span>{intl.formatMessage({ id: detailsOpen ? "wallet.activity.hideDetails" : "wallet.activity.showDetails" })}</span>
@@ -197,11 +186,11 @@ function WalletPaymentActivityCard({ activity, onPresented, onRefresh, refreshFa
   );
 }
 
-export function WalletPaymentActivityCards({ activities, onPresented, onRefresh, refreshFailures = [] }: { activities: readonly WalletPaymentActivity[]; onPresented?: Presented; onRefresh?: Presented; refreshFailures?: readonly string[] }) {
+export function WalletPaymentActivityCards({ activities, onPresented }: { activities: readonly WalletPaymentActivity[]; onPresented?: Presented }) {
   if (!activities.length) return null;
   return (
     <div className="flex flex-col gap-2">
-      {activities.map((activity) => <WalletPaymentActivityCard key={`${activity.invocationId}:${activity.paymentId}`} activity={activity} onPresented={onPresented} onRefresh={onRefresh} refreshFailed={refreshFailures.includes(activity.invocationId)} />)}
+      {activities.map((activity) => <WalletPaymentActivityCard key={`${activity.invocationId}:${activity.paymentId}`} activity={activity} onPresented={onPresented} />)}
     </div>
   );
 }
@@ -219,16 +208,15 @@ export function WalletPaymentActivityRestoreNotice({ onRetry }: { onRetry: () =>
 }
 
 /** This separate readonly area cannot acknowledge a quote or manufacture a tool row. */
-export function RestoredWalletPaymentActivities({ activities, rows, onRefresh, refreshFailures }: {
+export function RestoredWalletPaymentActivities({ activities, rows }: {
   activities: readonly WalletPaymentActivity[];
   rows: readonly { kind: string; turnId: string; runtimeTurnId?: string; toolCallId?: string }[];
-  onRefresh: Presented; refreshFailures: readonly string[];
 }) {
   const { intl } = useFCodeIntl();
   const restored = unmatchedRestoredActivities(activities, rows);
   if (!restored.length) return null;
   return <section className="mx-auto my-3 flex w-full min-w-0 flex-col gap-2 px-4" aria-label={intl.formatMessage({ id: "wallet.activity.restored" })}>
     <p className="text-ui-sm text-[var(--color-foreground-subtle)]">{intl.formatMessage({ id: "wallet.activity.restored" })}</p>
-    <WalletPaymentActivityCards activities={restored} onRefresh={onRefresh} refreshFailures={refreshFailures} />
+    <WalletPaymentActivityCards activities={restored} />
   </section>;
 }

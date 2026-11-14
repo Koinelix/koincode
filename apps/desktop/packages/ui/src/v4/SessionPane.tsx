@@ -1121,7 +1121,7 @@ export function SessionPane({
   );
 
   const workspaceKey = workspaceIdentity?.trim() || workspacePath;
-  const { activities: walletPaymentActivity, onPresented: onWalletPaymentActivityPresented, onRefresh: onWalletPaymentActivityRefresh, refreshFailures: walletPaymentRefreshFailures, restoreFailed: walletPaymentRestoreFailed, onRestoreRetry: onWalletPaymentRestoreRetry } = useWalletPaymentActivity(
+  const { activities: walletPaymentActivity, onPresented: onWalletPaymentActivityPresented, restoreFailed: walletPaymentRestoreFailed, onRestoreRetry: onWalletPaymentRestoreRetry } = useWalletPaymentActivity(
     workspaceIdentity || remoteSessionId || !walletPaymentActivityEnabled ? undefined : platform?.walletUi,
     workspaceKey,
     sessionId,
@@ -2199,8 +2199,6 @@ export function SessionPane({
   const rowContext = useMemo<ConversationRowRenderContext>(
     () => ({
       walletPaymentActivity,
-      walletPaymentRefreshFailures,
-      onWalletPaymentActivityRefresh,
       onWalletPaymentActivityPresented: activeWalletPaymentPresenter,
       workspacePath,
       workspaceHomePath,
@@ -2261,9 +2259,7 @@ export function SessionPane({
     }),
     [
       walletPaymentActivity,
-      walletPaymentRefreshFailures,
       activeWalletPaymentPresenter,
-      onWalletPaymentActivityRefresh,
       workspacePath,
       workspaceHomePath,
       workspaceIdentity,
@@ -4811,8 +4807,7 @@ export function SessionPane({
               })}
               headerSlot={<>
                 {walletPaymentRestoreFailed ? <WalletPaymentActivityRestoreNotice onRetry={onWalletPaymentRestoreRetry} /> : null}
-                <RestoredWalletPaymentActivities activities={walletPaymentActivity} rows={snapshot?.rows.window ?? []}
-                  onRefresh={onWalletPaymentActivityRefresh} refreshFailures={walletPaymentRefreshFailures} />
+                <RestoredWalletPaymentActivities activities={walletPaymentActivity} rows={snapshot?.rows.window ?? []} />
                 {/* Imported shares remain visible when all transcript rows are unsupported. */}
                 {importedShare &&
                 (importedShare.rows.length > 0 || importedShare.unsupportedRowCount > 0) ? (

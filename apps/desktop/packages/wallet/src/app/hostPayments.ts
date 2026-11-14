@@ -180,7 +180,7 @@ export class HostPayments {
           stored.selected.amount === record.amountAtomic &&
           stored.selected.network === record.network)
         quote = { amountAtomic: stored.selected.amount, network: stored.selected.network, asset: stored.selected.asset,
-          assetSymbol: stored.selected.extra.name, assetDecimals: config.assetDecimals, payTo: stored.selected.payTo };
+          assetSymbol: config.assetSymbol, assetDecimals: config.assetDecimals, payTo: stored.selected.payTo };
     } catch { /* Expired or unavailable protected quote must not manufacture an amount. */ }
     let target: string | undefined;
     try {

@@ -22,7 +22,7 @@
   "paths": {
     "/v1/images/generations": {
       "post": {
-        "description": "Generate one image from a text prompt, optionally with up to 3 reference images, and receive it synchronously as Base64 JSON. Price: 0.05 USDC per paid call. No account is needed: send the JSON body with an x402 payment; each anonymous payment buys exactly one generation attempt. Payment settles before generation and is not refunded if generation fails. Generation usually takes tens of seconds; keep the connection open until the response arrives and never pay again for an unknown result. If the response is lost, resend the same PAYMENT-SIGNATURE with the same body instead of paying again; a completed image is not kept, so save it as soon as it arrives. Optional platform API key users get up to three attempts per payment. Model is optional: a prompt-only body uses the server default published model; an explicit model is used exactly. Anonymous x402 omits Authorization.",
+        "description": "Image generation from a text prompt, with up to 3 optional reference images for editing or combining pictures. Use when an agent needs a picture: text to image, AI image generator, image edit. One image returns as Base64 JSON, usually within tens of seconds. Price: 0.021 USDC per call, paid with x402; no account or API key is needed. An optional platform API key allows up to three attempts per payment.",
         "operationId": "generateImage",
         "parameters": [
           {
@@ -56,7 +56,6 @@
                     "image_b64": [
                       "<standard Base64 of a JPEG or PNG, no data: prefix>"
                     ],
-                    "model": "koinelix/image-2.5",
                     "prompt": "Turn this photo into a watercolor painting"
                   }
                 },
@@ -65,13 +64,17 @@
                     "image_urls": [
                       "https://example.com/photo.jpg"
                     ],
-                    "model": "koinelix/image-2.5",
                     "prompt": "Replace the man in the reference image with a woman; keep everything else unchanged"
                   }
                 },
                 "text": {
                   "value": {
-                    "model": "koinelix/image-2.5",
+                    "prompt": "A watercolor lighthouse at sunrise"
+                  }
+                },
+                "with_model": {
+                  "value": {
+                    "model": "gpt-image-2.5",
                     "prompt": "A watercolor lighthouse at sunrise"
                   }
                 }
@@ -103,7 +106,12 @@
                     "type": "array"
                   },
                   "model": {
-                    "description": "Optional published Koinelix model ID. Omit it to use the server-configured default model.",
+                    "description": "Optional published Koinelix model ID. Omit it to use the default model (gpt-image-2.5).",
+                    "enum": [
+                      "gpt-image-2.5",
+                      "gpt-image-2.5-flare",
+                      "gpt-image-2.5-sunburst"
+                    ],
                     "maxLength": 128,
                     "minLength": 1,
                     "type": "string"
@@ -360,12 +368,24 @@
           }
         ],
         "summary": "Generate one image (x402 paid, no account required)",
+        "x-codeSamples": [
+          {
+            "label": "curl: get the quote",
+            "lang": "Shell",
+            "source": "# 1. Get the quote: no payment. Returns HTTP 402 with the PAYMENT-REQUIRED header.\ncurl -i -X POST https://api.koinelix.com/v1/images/generations \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"prompt\":\"A watercolor lighthouse at sunrise\"}'\n"
+          },
+          {
+            "label": "curl: generate and save the image",
+            "lang": "Shell",
+            "source": "# 2. Generate with the signed payment (PAYMENT_SIGNATURE is the quote signed by your wallet or x402 client).\ncurl --max-time 120 -X POST https://api.koinelix.com/v1/images/generations \\\n  -H \"PAYMENT-SIGNATURE: $PAYMENT_SIGNATURE\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"prompt\":\"A watercolor lighthouse at sunrise\"}' -o response.json\n\n# 3. Save the image: the result is Base64 in data[0].b64_json.\njq -r '.data[0].b64_json' response.json | base64 --decode > image.png\n"
+          }
+        ],
         "x-payment-info": {
           "networks": [
-            "eip155:84532"
+            "eip155:8453"
           ],
           "price": {
-            "amount": "0.05",
+            "amount": "0.021",
             "currency": "USD",
             "mode": "fixed"
           },
@@ -379,7 +399,7 @@
     },
     "/v1/images/recognitions": {
       "post": {
-        "description": "Recognize one image with a multimodal model: send one image (a URL or Base64) and an optional prompt, and receive the answer as plain text or Markdown. Price: 0.021 USDC per call. No account is needed: send the JSON body with an x402 payment, or use a Koinelix platform API key.",
+        "description": "Image recognition and description with a multimodal model. Use when an agent needs to understand a picture: describe it, answer a question about it, read visible text or inspect details. One image goes in as an image URL or as Base64 (up to 10 MiB decoded) with an optional prompt; the answer returns as plain text or Markdown. Price: 0.011 USDC per call, paid with x402; no account or API key is needed.",
         "operationId": "recognizeImage",
         "parameters": [
           {
@@ -438,12 +458,12 @@
                 "properties": {
                   "image_b64": {
                     "contentEncoding": "base64",
-                    "description": "The image as one standard padded Base64 string without a data: prefix: png, jpeg, webp or gif, at most 10 MiB decoded. Use either image_url or image_b64.",
+                    "description": "The image as one standard padded Base64 string on a single line, without a data: prefix: png, jpeg, webp or gif, at most 10 MiB decoded. Produce it in code and put it into the request body (shell: base64 < photo.png | tr -d '\\n'; Python: base64.b64encode(data).decode()). Tip for clients that write tool-call arguments by hand, token by token: a long string is easily corrupted, so send a small image that way (a few thousand characters), or use image_url, or let code build the request. Use either image_url or image_b64.",
                     "minLength": 1,
                     "type": "string"
                   },
                   "image_url": {
-                    "description": "Absolute http or https URL of the image. Use either image_url or image_b64.",
+                    "description": "Absolute http or https URL of the image. Preferred when the image is already online. Use either image_url or image_b64.",
                     "format": "uri",
                     "maxLength": 2048,
                     "minLength": 1,
@@ -474,6 +494,17 @@
           "200": {
             "content": {
               "application/json": {
+                "examples": {
+                  "answer": {
+                    "value": {
+                      "content": "A tabby cat sitting on a wooden windowsill.",
+                      "created": 1767225600,
+                      "format": "markdown",
+                      "id": "c_0123456789abcdef",
+                      "truncated": false
+                    }
+                  }
+                },
                 "schema": {
                   "properties": {
                     "content": {
@@ -522,7 +553,7 @@
                 }
               }
             },
-            "description": "The answer; PAYMENT-RESPONSE carries the settlement."
+            "description": "The answer in content; PAYMENT-RESPONSE carries the settlement."
           },
           "400": {
             "content": {
@@ -828,12 +859,29 @@
           }
         ],
         "summary": "Recognize one image (x402 paid, no account required)",
+        "x-codeSamples": [
+          {
+            "label": "curl: get the quote",
+            "lang": "Shell",
+            "source": "# 1. Get the quote: no payment. Returns HTTP 402 with the PAYMENT-REQUIRED header.\ncurl -i -X POST https://api.koinelix.com/v1/images/recognitions \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"image_url\":\"https://example.com/photo.jpg\"}'\n"
+          },
+          {
+            "label": "curl: recognize (image URL)",
+            "lang": "Shell",
+            "source": "# 2. Recognize with the signed payment (PAYMENT_SIGNATURE is the quote signed by your wallet or x402 client).\ncurl --max-time 120 -X POST https://api.koinelix.com/v1/images/recognitions \\\n  -H \"PAYMENT-SIGNATURE: $PAYMENT_SIGNATURE\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"image_url\":\"https://example.com/photo.jpg\",\"prompt\":\"What is in this image?\"}'\n# The answer is in the content field of the JSON response.\n"
+          },
+          {
+            "label": "curl: recognize (local image, Base64)",
+            "lang": "Shell",
+            "source": "# Or send a local image as one-line standard Base64 (image_b64) from a body file.\nprintf '{\"image_b64\":\"%s\"}' \"$(base64 < photo.png | tr -d '\\n')\" > body.json\ncurl --max-time 120 -X POST https://api.koinelix.com/v1/images/recognitions \\\n  -H \"PAYMENT-SIGNATURE: $PAYMENT_SIGNATURE\" \\\n  -H 'Content-Type: application/json' \\\n  --data-binary @body.json\n"
+          }
+        ],
         "x-payment-info": {
           "networks": [
-            "eip155:84532"
+            "eip155:8453"
           ],
           "price": {
-            "amount": "0.021",
+            "amount": "0.011",
             "currency": "USD",
             "mode": "fixed"
           },

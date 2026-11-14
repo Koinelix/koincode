@@ -2130,6 +2130,7 @@ app.whenReady().then(async () => {
   });
   const walletClients = new DesktopWalletClientRunner({
     directory: join(getFCodeDataRootDir(), "v2", "independent-clients"),
+    paymentNetwork: desktopPaymentNetwork().network,
     credentials: serviceCredentialStore, nodeExecutable: process.execPath,
     paymentActivity: walletActivity,
   });

@@ -14,7 +14,7 @@ export function useWalletPaymentActivity(
   sessionId: string | null | undefined,
   rows: readonly ConversationRow[],
   active = true,
-): { activities: WalletPaymentActivity[]; onPresented: (activity: WalletPaymentActivity) => Promise<boolean>; onRefresh: (activity: WalletPaymentActivity) => Promise<boolean>; refreshFailures: readonly string[]; restoreFailed: boolean; onRestoreRetry: () => void } {
+): { activities: WalletPaymentActivity[]; onPresented: (activity: WalletPaymentActivity) => Promise<boolean>; restoreFailed: boolean; onRestoreRetry: () => void } {
   const scopeKey = sessionId ? JSON.stringify([workspaceKey, sessionId]) : "";
   const [state, setState] = useState<ActivityState>({ scope: "", items: [] });
   const [restoreFailure, setRestoreFailure] = useState("");
@@ -72,6 +72,6 @@ export function useWalletPaymentActivity(
     setState(previous => previous.scope === scope ? { scope, items: mergeActivity(previous.items, item) } : previous);
   }, []);
   const activities = state.scope === scopeKey ? state.items : [];
-  const { refresh: onRefresh, failedInvocations: refreshFailures } = useWalletPaymentRefresh(wallet, workspaceKey, sessionId, scopeKey, activities, active, acceptRefresh);
-  return { activities, onPresented, onRefresh, refreshFailures, restoreFailed: !!scopeKey && restoreFailure === scopeKey, onRestoreRetry };
+  useWalletPaymentRefresh(wallet, workspaceKey, sessionId, scopeKey, activities, active, acceptRefresh);
+  return { activities, onPresented, restoreFailed: !!scopeKey && restoreFailure === scopeKey, onRestoreRetry };
 }

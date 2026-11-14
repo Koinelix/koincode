@@ -1397,7 +1397,7 @@ function ConversationTurnGroupImpl({
               }
             />
           )}
-          <WalletPaymentActivityCards activities={walletPaymentActivity} onPresented={context.onWalletPaymentActivityPresented} onRefresh={context.onWalletPaymentActivityRefresh} refreshFailures={context.walletPaymentRefreshFailures} />
+          <WalletPaymentActivityCards activities={walletPaymentActivity} onPresented={context.onWalletPaymentActivityPresented} />
           {/* 完成卡：这一轮消化的那条 run 做了什么、花了多少，紧跟最后一段正文。 */}
           {workflowTurnCompletion === undefined ? null : (
             <ConversationWorkflowCompletion
