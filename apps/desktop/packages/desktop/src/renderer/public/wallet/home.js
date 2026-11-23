@@ -1,6 +1,7 @@
 window.createWalletHomeView = (api, { message, run, settings }) => {
   const byId = (id) => document.getElementById(id);
   const picker = byId("wallet-selector"), limits = byId("wallet-limits-dialog");
+  let selectionNotice = "";
   let lastData, network, selected, setupRequired = false, ready = false, count = 0, working = false, loading = false, managerBusy = false, generation = 0;
   const managerButtons = ["general-create", "general-import", "wallet-export"].map(byId);
   const menu = byId("wallet-account-menu"), toggle = byId("wallet-menu-toggle"), actions = byId("wallet-management-actions");
@@ -115,7 +116,8 @@ window.createWalletHomeView = (api, { message, run, settings }) => {
     limits.showModal(); void settings?.open(selected.walletId);
   });
   picker.addEventListener("change", (event) => {
-    if (!event.isTrusted || working || loading || managerBusy || !ready || !picker.value || picker.value === selected?.walletId) return;
+    if (!event.isTrusted || working || loading || managerBusy || !ready || !picker.value || picker.value === selected?.walletId ||
+        !lastData?.wallets.some(wallet => wallet.walletId === picker.value)) return;
     const id = picker.value; picker.disabled = true;
     void run(() => api.setDefault(id));
   });
@@ -126,9 +128,11 @@ window.createWalletHomeView = (api, { message, run, settings }) => {
     localize() {
       if (!lastData) return;
       const status = byId("general-setup-status").textContent;
+      const preserveStatus = status !== selectionNotice;
       const summary = byId("wallet-limit-summary").textContent;
       this.update(lastData); copyPresentation();
-      byId("general-setup-status").textContent = status; byId("wallet-limit-summary").textContent = summary;
+      if (preserveStatus) byId("general-setup-status").textContent = status;
+      byId("wallet-limit-summary").textContent = summary;
     },
     balanceRows(rows) {
       const usdc = rows.find(row => row.symbol === "USDC");
@@ -149,8 +153,9 @@ window.createWalletHomeView = (api, { message, run, settings }) => {
       if (selected?.walletId !== nextSelected?.walletId) { generation++; byId("wallet-usdc-balance").textContent = "—"; }
       if (selected?.address !== nextSelected?.address && renameDialog.open) renameDialog.close();
       selected = nextSelected;
-      picker.hidden = data.wallets.length <= 1;
-      byId("wallet-single-name").hidden = data.wallets.length > 1;
+      const selectionRequired = count > 0 && !selected;
+      picker.hidden = count === 0 || (count === 1 && Boolean(selected));
+      byId("wallet-single-name").hidden = !picker.hidden;
       byId("wallet-single-name").textContent = message("defaultWallet", "Default wallet");
       if (actions.parentElement) (setupRequired || !selected ? byId("wallet-card") : byId("wallet-management-slot")).append(actions);
       byId("wallet-export").hidden = !selected;
@@ -170,9 +175,10 @@ window.createWalletHomeView = (api, { message, run, settings }) => {
       picker.value = selected?.walletId ?? ""; picker.disabled = !data.profileOpen || !data.wallets.length;
       byId("wallet-address").textContent = selected?.address ?? "—";
       byId("wallet-open-limits").disabled = !selected;
-      byId("wallet-home-empty").hidden = Boolean(selected) || data.loading;
+      byId("wallet-home-empty").hidden = count > 0 || loading;
       byId("wallet-home-disconnected").hidden = true;
-      byId("general-setup-status").textContent = data.loading ? message("homeLoading", "Opening your wallet…") : "";
+      selectionNotice = selectionRequired ? message("homeChooseWalletNotice", "Choose a wallet above to view its address and settings.") : "";
+      byId("general-setup-status").textContent = data.loading ? message("homeLoading", "Opening your wallet…") : selectionNotice;
       byId("wallet-limit-summary").textContent = message("homeLimitsPending", "View and set limits");
       if (!selected) closeLimits();
       controls();

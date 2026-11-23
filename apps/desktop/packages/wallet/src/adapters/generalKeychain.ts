@@ -2,11 +2,12 @@ import { basename, dirname } from "node:path";
 import type { ProtectedStore } from "../app/ports.js";
 import { requireWallet } from "../domain/errors.js";
 import { NativeKeychainStore } from "./keychain.js";
+import { nativeHelperBasename } from "./windowsNative.js";
 import { createUserKeychainStore } from "./userKeychain.js";
 
 /** This separate helper is the only Keychain service usable by the general-wallet owner. */
 export function createGeneralKeychainStore(helper: string): ProtectedStore {
-  requireWallet(typeof helper === "string" && basename(helper) === "keychain-helper-general-wallet",
+  requireWallet(typeof helper === "string" && nativeHelperBasename(helper) === "keychain-helper-general-wallet",
     "GENERAL_STORE_UNAVAILABLE", "The independent general wallet protection backend is unavailable.");
   const store = basename(dirname(helper)) === "user-v2" ? createUserKeychainStore(helper) : new NativeKeychainStore(helper, true);
   return { get: (account) => store.get(account), put: (account, value) => store.put(account, value) };

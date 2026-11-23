@@ -6,6 +6,6 @@ export function desktopPaymentNetwork() {
     throw new Error("The fixed wallet network is missing from this build.");
   }
   return __KOINCODE_X402_MAINNET__
-    ? { network: "eip155:8453" as const, namespace: "mainnet" as const, helper: "keychain-helper-mainnet" }
-    : { network: "eip155:84532" as const, namespace: "m4-testnet" as const, helper: "keychain-helper-m4-testnet" };
+    ? { network: "eip155:8453" as const, namespace: "mainnet" as const, helper: `keychain-helper-mainnet${process.platform === "win32" ? ".exe" : ""}` }
+    : { network: "eip155:84532" as const, namespace: "m4-testnet" as const, helper: `keychain-helper-m4-testnet${process.platform === "win32" ? ".exe" : ""}` };
 }

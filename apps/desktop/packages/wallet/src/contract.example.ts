@@ -3,7 +3,7 @@ import { serveHostWalletRequests } from "./adapters/hostRequestServer.js";
 import { createHostWalletChannelClient } from "./adapters/hostRequestClient.js";
 import { createHostWalletRequestBridge } from "./adapters/hostRequestBridge.js";
 import { checkBudget, type BudgetSubject, type WalletLimits } from "./contract.js";
-import { openLocalWallet, openLocalWalletRequests, type LocalWalletOptions } from "./node.js";
+import { openLocalWallet, openLocalWalletRequests, runWalletStdioBridge, type LocalWalletOptions } from "./node.js";
 import { DurableOperationAdapter } from "./node.js";
 import type { WalletClientPort, HostPaymentPresenter } from "./node.js";
 import { createAuthenticatedPaymentClient } from "./node.js";
@@ -42,6 +42,11 @@ export function exampleGeneralTokenInspection(service: GeneralBalanceService, ne
 // Only a trusted local wallet window uses this address-only QR; it has no payment authority.
 export function exampleGeneralReceive(networkId: string, address: string) {
   return createGeneralReceiveView({ networkId, address, assetId: "native" });
+}
+
+// Only a trusted local host supplies native bridge metadata through the private credential channel.
+export function exampleTrustedWindowsBridge(input: Parameters<typeof runWalletStdioBridge>[0]) {
+  return runWalletStdioBridge(input);
 }
 
 // Only the trusted runtime owner selects system storage protection; this is not a client payment method.

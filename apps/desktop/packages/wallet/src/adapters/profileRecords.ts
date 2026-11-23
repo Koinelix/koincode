@@ -14,6 +14,8 @@ import {
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { requireWallet, WalletError } from "../domain/errors.js";
+import { privatePermissions } from "./privateFilesystem.js";
+import { windowsNativeSync } from "./windowsNative.js";
 export interface ProfileBinding {
   directory: string;
   installationId: string;
@@ -38,7 +40,8 @@ export function readProfileBinding(path: string): ProfileBinding | null {
   if (!recordExists(path)) return null;
   const info = lstatSync(path);
   requireWallet(
-    info.isFile() && !info.isSymbolicLink() && info.size <= 16384,
+    info.isFile() && !info.isSymbolicLink() && info.size <= 16384 &&
+      (process.platform !== "win32" || privatePermissions(info, path)),
     "WALLET_RECOVERY_REQUIRED",
     "The service profile registration is invalid.",
   );
@@ -77,6 +80,7 @@ export function publishProfileRecord(
     fsyncSync(fd);
     closeSync(fd);
     fd = null;
+    if (process.platform === "win32") { windowsNativeSync(["publish", pending, path, replace ? "replace" : "create"]); return; }
     if (replace) renameSync(pending, path);
     else linkSync(pending, path);
     const parent = openSync(directory, "r");

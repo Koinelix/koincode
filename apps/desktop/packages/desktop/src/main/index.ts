@@ -575,19 +575,15 @@ const serviceCredentialStore = new ServiceCredentialStore(
 );
 const walletNativeDirectory = app.isPackaged
   ? join(process.resourcesPath, "wallet-native")
-  : resolve(app.getAppPath(), "../../.tmp/wallet-native");
+  : process.platform === "win32" ? join(app.getPath("home"), ".koincode/wallet/native-resources")
+    : resolve(app.getAppPath(), "../../.tmp/wallet-native");
 const walletAuthentication = directWalletAuthentication();
 const walletProcess = new DesktopWalletProcess({
   createChannel: () => new MessageChannelMain(),
   fork: utilityProcess.fork.bind(utilityProcess),
   modulePath: resolve(import.meta.dirname, "../wallet/index.js"),
   keychainHelper: join(walletNativeDirectory, "user-v2", desktopPaymentNetwork().helper),
-  env: {
-    HOME: app.getPath("home"),
-    PATH: "/usr/bin:/bin",
-    ...(process.env.TMPDIR ? { TMPDIR: process.env.TMPDIR } : {}),
-    ...(process.env.LANG ? { LANG: process.env.LANG } : {}),
-  },
+  env: desktopWalletEnvironment(app.getPath("home")),
   // Bug fix (2026-11-13): exit diagnostics went only to the console, which a GUI-launched app does not keep.
   report: (message, details) => logger.warn(message, details),
 });
@@ -595,11 +591,7 @@ const generalWalletProcess = new DesktopGeneralWalletProcess({
   createChannel: () => new MessageChannelMain(),
   fork: utilityProcess.fork.bind(utilityProcess),
   modulePath: resolve(import.meta.dirname, "../general-wallet/index.js"),
-  env: {
-    HOME: app.getPath("home"), PATH: "/usr/bin:/bin",
-    ...(process.env.TMPDIR ? { TMPDIR: process.env.TMPDIR } : {}),
-    ...(process.env.LANG ? { LANG: process.env.LANG } : {}),
-  },
+  env: desktopWalletEnvironment(app.getPath("home")),
 });
 const generalWalletDevelopmentRuntime = new DesktopGeneralWalletDevelopmentRuntime({
   packaged: app.isPackaged, appRoot: app.getAppPath(), environment: FCODE_ENV,
@@ -2644,3 +2636,4 @@ app.on("before-quit", (event) => {
 app.on("activate", () => {
   void primaryWindowCoordinator.ensurePrimaryWindow("app-activate");
 });
+import { desktopWalletEnvironment } from "./desktopWalletEnvironment.js";

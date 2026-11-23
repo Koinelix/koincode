@@ -1,17 +1,19 @@
 import type { ClientHandle } from "./sessions.js";
 import { requireWallet } from "../domain/errors.js";
-export interface PeerIdentityReport {
-  platform: "darwin";
+interface CommonPeerIdentityReport {
   kernelBound: true;
   pid: number;
-  uid: number;
   valid: boolean;
   identityKey: string | null;
+  classification: "token_only";
+}
+export type PeerIdentityReport = CommonPeerIdentityReport & ({
+  platform: "darwin";
+  uid: number;
   hardened: boolean;
   riskyEntitlements: boolean;
   interpreter: boolean;
-  classification: "token_only";
-}
+} | { platform: "win32"; sid: string; started: string });
 declare const proofBrand: unique symbol;
 export type PeerIdentityProof = { readonly [proofBrand]: true };
 const proofs = new WeakMap<

@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { copyFileSync, chmodSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildWindowsWalletNative } from "./build-windows-native.mjs";
 const packaged = process.argv.includes("--packaged");
 const userStore = process.argv.includes("--user-store-v2");
 const archIndex = process.argv.indexOf("--arch");
@@ -11,7 +12,8 @@ const outputRoot = fileURLToPath(new URL("../../../.tmp/", import.meta.url));
 const output = packaged
   ? join(outputRoot, "wallet-native-package", arch)
   : join(outputRoot, "wallet-native");
-if (process.platform !== "darwin") throw new Error("The native Keychain adapter requires macOS.");
+if (process.platform === "win32") { buildWindowsWalletNative({ packaged, arch }); process.exit(0); }
+if (process.platform !== "darwin") throw new Error("The native wallet adapter is unavailable on this platform.");
 mkdirSync(output, { recursive: true, mode: 0o700 });
 const selected = [
   ["--keychain-only", "keychain"],

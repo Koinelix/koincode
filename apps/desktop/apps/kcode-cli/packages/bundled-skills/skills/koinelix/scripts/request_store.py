@@ -91,7 +91,9 @@ def bind_task_request(directory, task_id, body, url, operation):
             raise error
         # The creator may have crashed after writing but before syncing.
         # Establish durability again before any caller is allowed to send.
-        fd = os.open(str(path), os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        # Windows FlushFileBuffers requires a writable file handle.
+        access = os.O_RDWR if os.name == "nt" else os.O_RDONLY
+        fd = os.open(str(path), access | getattr(os, "O_NOFOLLOW", 0))
         try:
             os.fsync(fd)
         finally:

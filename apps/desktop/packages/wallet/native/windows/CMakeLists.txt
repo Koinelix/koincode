@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.21)
+project(KoinCodeWalletNative LANGUAGES CXX)
+add_executable(koincode-wallet-native Main.cpp Security.cpp Storage.cpp Pipe.cpp)
+target_compile_features(koincode-wallet-native PRIVATE cxx_std_20)
+set_property(TARGET koincode-wallet-native PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+target_compile_definitions(koincode-wallet-native PRIVATE UNICODE _UNICODE NOMINMAX _WIN32_WINNT=0x0A00)
+target_compile_options(koincode-wallet-native PRIVATE /W4 /WX /EHsc /utf-8)
+target_link_libraries(koincode-wallet-native PRIVATE advapi32 crypt32 bcrypt shell32 ole32)

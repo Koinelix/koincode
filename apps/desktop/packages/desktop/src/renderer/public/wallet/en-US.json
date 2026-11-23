@@ -265,6 +265,7 @@
   "homeClose": "Close",
   "homeSelfCustody": "Your keys, your wallet",
   "homeChooseWallet": "Choose a wallet",
+  "homeChooseWalletNotice": "Choose a wallet above to view its address and settings.",
   "homeManagerOpened": "Continue in the wallet management window.",
   "homeManagerBusy": "The wallet is processing another operation. Try again shortly.",
   "homeManagerUnavailable": "Wallet management is not ready. Creating, importing and exporting are currently unavailable.",

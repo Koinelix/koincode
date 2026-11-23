@@ -1,10 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
-import type { ProtectedStore, ResponseSecretStore } from "../app/ports.js";
+import type { ResponseSecretStore } from "../app/ports.js";
 import { requireWallet } from "../domain/errors.js";
 import { NativeKeychainStore } from "./keychain.js";
+import { WindowsProtectedStore } from "./windowsProtectedStore.js";
+import { nativeHelperBasename, nativeHelperFilename } from "./windowsNative.js";
 import { acquireProfileLease } from "./profileLease.js";
+import type { UserStorageBackend } from "./userStorageBackend.js";
+export type { UserStorageBackend } from "./userStorageBackend.js";
 
 export const userStorageNamespaces = ["testnet", "m4-testnet", "mainnet", "general"] as const;
 export type UserStorageNamespace = typeof userStorageNamespaces[number];
@@ -35,11 +39,6 @@ export function parseUserActivation(bytes: Uint8Array): UserStorageActivation {
       activeUserStorageNamespaces.some(name => name === n) && typeof id === "string" && uuid.test(id)),
     "WALLET_STORAGE_RECOVERY_REQUIRED", "The protected storage activation is invalid.");
   return value;
-}
-export interface UserStorageBackend extends ProtectedStore {
-  listLegacyAccounts(): Promise<string[]>;
-  removePhysicalResponseSecret(account: string): Promise<void>;
-  removeResponseFile(ref: string, fd: number): Promise<void>;
 }
 /** One activation record in the general service covers every payment namespace. */
 export class UserStorageRegistry {
@@ -104,12 +103,14 @@ export class UserStorageRegistry {
 }
 export function createUserStorageRegistry(helperDirectory: string): UserStorageRegistry {
   requireWallet(basename(helperDirectory) === "user-v2", "PROTECTED_STORAGE_UPGRADE_REQUIRED", "The v2 helper directory is required.");
-  const stores = Object.fromEntries(userStorageNamespaces.map(namespace =>
-    [namespace, new NativeKeychainStore(join(helperDirectory, userStorageHelpers[namespace]), "user-v2")])) as Record<UserStorageNamespace, NativeKeychainStore>;
+  const create = (namespace: UserStorageNamespace): UserStorageBackend => process.platform === "win32"
+      ? new WindowsProtectedStore(join(helperDirectory, nativeHelperFilename(userStorageHelpers[namespace])), namespace)
+      : new NativeKeychainStore(join(helperDirectory, userStorageHelpers[namespace]), "user-v2");
+  const stores = { testnet: create("testnet"), "m4-testnet": create("m4-testnet"), mainnet: create("mainnet"), general: create("general") };
   return new UserStorageRegistry(stores, () => acquireProfileLease(join(homedir(), ".koincode/wallet/user-storage")));
 }
 export function createUserKeychainStore(helper: string) {
-  const namespace = userStorageNamespaces.find(name => userStorageHelpers[name] === basename(helper));
+  const namespace = userStorageNamespaces.find(name => userStorageHelpers[name] === nativeHelperBasename(helper));
   requireWallet(namespace, "INVALID_REQUEST_CONFIGURATION", "Unknown wallet protection namespace.");
   return createUserStorageRegistry(dirname(helper)).storage(namespace);
 }

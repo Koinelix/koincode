@@ -217,7 +217,7 @@ function stop(child: ChildProcess, force: boolean) {
 async function runClient(request: Input, nodeExecutable: string, cwd: string, signal: AbortSignal,
   call: (method: string, params: Record<string, unknown>) => Promise<unknown>, onClosed: () => void): Promise<unknown> {
   signal.throwIfAborted();
-  const child = spawn(request.runtime === "node" ? nodeExecutable : "python3",
+  const child = spawn(request.runtime === "node" ? nodeExecutable : process.platform === "win32" ? "python" : "python3",
     [...(request.runtime === "python3" ? ["-B"] : []), request.script, ...request.args], {
     cwd, shell: false, detached: process.platform !== "win32", windowsHide: true,
     env: { ...clientEnvironment(), ...(request.runtime === "node" ? { ELECTRON_RUN_AS_NODE: "1" } : {}) },

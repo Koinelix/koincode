@@ -9,22 +9,23 @@ import {
   closeSync,
   existsSync,
   lstatSync,
-  mkdirSync,
   openSync,
   realpathSync,
 } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { requireWallet, WalletError } from "../domain/errors.js";
+import { createPrivateDirectory, privatePermissions } from "./privateFilesystem.js";
 export function acquireProfileLease(directory: string) {
-  mkdirSync(directory, { recursive: true, mode: 0o700 });
+  createPrivateDirectory(directory);
   const info = lstatSync(directory);
   requireWallet(
     info.isDirectory() && !info.isSymbolicLink(),
     "UNSAFE_STORAGE_PATH",
     "The service lease directory must be private.",
   );
-  chmodSync(directory, 0o700);
+  if (process.platform !== "win32") chmodSync(directory, 0o700);
+  requireWallet(process.platform !== "win32" || privatePermissions(info, directory, true), "UNSAFE_STORAGE_PATH", "The wallet lease directory is not private.");
   const path = join(realpathSync(directory), "service-lease.sqlite");
   if (!existsSync(path)) closeSync(openSync(path, "wx", 0o600));
   const file = lstatSync(path);
@@ -33,7 +34,8 @@ export function acquireProfileLease(directory: string) {
     "UNSAFE_STORAGE_PATH",
     "The service lease must be a regular file.",
   );
-  chmodSync(path, 0o600);
+  if (process.platform !== "win32") chmodSync(path, 0o600);
+  requireWallet(process.platform !== "win32" || privatePermissions(file, path), "UNSAFE_STORAGE_PATH", "The wallet lease file is not private.");
   const database = new DatabaseSync(path);
   try {
     database.exec(

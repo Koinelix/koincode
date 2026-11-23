@@ -282,7 +282,7 @@ parent.on("message", (event: Electron.MessageEvent) => {
       management = bindLocalGeneralManagement(ports[0]!, {
         paymentNetwork: paymentNetwork.network,
         directory: join(dirname(walletNode.walletServiceDirectory(paymentNetwork.namespace)), "general-local"),
-        keychainHelper: join(dirname(nativeHelper), basename(dirname(nativeHelper)) === "user-v2" ? "keychain-helper-general-wallet" : "noninteractive-v1/keychain-helper-general-wallet"),
+        keychainHelper: join(dirname(nativeHelper), basename(dirname(nativeHelper)) === "user-v2" ? `keychain-helper-general-wallet${process.platform === "win32" ? ".exe" : ""}` : "noninteractive-v1/keychain-helper-general-wallet"),
         lookupLegacyAddress: async (address) => runtime?.lookupManagedAddress(address) ?? "unavailable",
         legacyAccounts: () => runtime!.listLocalManagementAccounts(),
         registerPaymentSource: (key, signal) => runtime!.registerLocalPaymentSource(key, signal),

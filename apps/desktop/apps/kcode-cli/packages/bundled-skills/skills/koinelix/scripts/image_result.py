@@ -25,7 +25,8 @@ def atomic_write(path, content):
     path = Path(path)
     descriptor, temporary = tempfile.mkstemp(prefix=".pending-", dir=str(path.parent))
     try:
-        os.fchmod(descriptor, 0o600)
+        if hasattr(os, "fchmod"):
+            os.fchmod(descriptor, 0o600)
         with os.fdopen(descriptor, "wb") as output:
             output.write(content)
             output.flush()

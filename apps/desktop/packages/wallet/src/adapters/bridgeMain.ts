@@ -17,7 +17,7 @@ async function main(): Promise<void> {
       chunks.push(bytes);
     }
     const bytes = Buffer.concat(chunks);
-    let value: { socketPath: string; clientId: string; token: string };
+    let value: { socketPath: string; clientId: string; token: string; nativeHelper?: string };
     try {
       value = JSON.parse(bytes.toString("utf8"));
     } finally {
@@ -28,7 +28,9 @@ async function main(): Promise<void> {
       !value ||
       typeof value.socketPath !== "string" ||
       typeof value.clientId !== "string" ||
-      typeof value.token !== "string"
+      typeof value.token !== "string" ||
+      (value.nativeHelper !== undefined && typeof value.nativeHelper !== "string") ||
+      Object.keys(value).some(key => !["socketPath", "clientId", "token", "nativeHelper"].includes(key))
     )
       throw new Error("Invalid credential pipe.");
     await runWalletStdioBridge({ ...value, stdin: process.stdin, stdout: process.stdout });

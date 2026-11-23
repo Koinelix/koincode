@@ -1,11 +1,13 @@
 import { randomBytes, randomUUID, createCipheriv, createDecipheriv } from "node:crypto";
-import { mkdir, open, lstat, realpath, opendir } from "node:fs/promises";
+import { open, lstat, realpath, opendir } from "node:fs/promises";
 import { constants } from "node:fs";
 import { join, resolve } from "node:path";
 import type { BlobStore, ResponseReservation } from "../app/requestPorts.js";
 import type { ProtectedStore, ResponseSecretStore } from "../app/ports.js";
 import { requireWallet, WalletError } from "../domain/errors.js";
 import { RESPONSE_LIMIT } from "../domain/requestValidation.js";
+import { createPrivateDirectory, privatePermissions, createWindowsPrivateFile, syncPrivateDirectory } from "./privateFilesystem.js";
+import { windowsNativeSync } from "./windowsNative.js";
 import {
   ResponseBudget,
   RESPONSE_STORAGE_LIMIT,
@@ -35,12 +37,12 @@ export class EncryptedRequestBlobs implements BlobStore {
       "UNSAFE_STORAGE_PATH",
       "An absolute blob root is required.",
     );
-    await mkdir(directory, { recursive: true, mode: 0o700 });
+    createPrivateDirectory(directory);
     const info = await lstat(directory);
     requireWallet(
       info.isDirectory() &&
         !info.isSymbolicLink() &&
-        (info.mode & 0o077) === 0 &&
+        privatePermissions(info, directory, true) &&
         (await realpath(directory)) === directory,
       "UNSAFE_STORAGE_PATH",
       "A private canonical blob directory is required.",
@@ -55,7 +57,7 @@ export class EncryptedRequestBlobs implements BlobStore {
       if (++entries > RESPONSE_BLOB_ENTRY_LIMIT) break;
       const file = await lstat(join(directory, entry.name));
       requireWallet(
-        file.isFile() && !file.isSymbolicLink() && (file.mode & 0o077) === 0,
+        file.isFile() && !file.isSymbolicLink() && privatePermissions(file, join(directory, entry.name)),
         "RESPONSE_STORAGE_UNAVAILABLE",
         "The protected blob inventory contains an unsafe entry.",
       );
@@ -110,6 +112,13 @@ export class EncryptedRequestBlobs implements BlobStore {
   private async remove(ref: string, protection: ResponseRemovalStore): Promise<void> {
     await this.writes.get(ref)?.catch(() => {});
     await this.checkDirectory();
+    if (process.platform === "win32") {
+      await protection.removeResponseSecret("http-blob:" + ref);
+      windowsNativeSync(["remove-file", this.directory, ref]);
+      const charge = this.charges.get(ref);
+      if (charge !== undefined) { this.budget.reclaim(charge); this.charges.delete(ref); }
+      return;
+    }
     const directory = await open(this.directory, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_DIRECTORY);
     try {
       const info = await directory.stat();
@@ -130,7 +139,7 @@ export class EncryptedRequestBlobs implements BlobStore {
   }
   private async checkDirectory(): Promise<void> {
     const info = await lstat(this.directory);
-    requireWallet(info.isDirectory() && !info.isSymbolicLink() && (info.mode & 0o077) === 0 &&
+    requireWallet(info.isDirectory() && !info.isSymbolicLink() && privatePermissions(info, this.directory, true) &&
       info.dev === this.identity.dev && info.ino === this.identity.ino &&
       await realpath(this.directory) === this.directory,
     "UNSAFE_STORAGE_PATH", "The protected blob directory changed.");
@@ -178,9 +187,10 @@ export class EncryptedRequestBlobs implements BlobStore {
       cipher.setAAD(Buffer.from(ref));
       const bytes = Buffer.concat([iv, cipher.update(value), cipher.final(), cipher.getAuthTag()]);
       await this.checkDirectory();
+      if (process.platform === "win32") createWindowsPrivateFile(join(this.directory, ref));
       const file = await open(
         join(this.directory, ref),
-        constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW,
+        process.platform === "win32" ? constants.O_WRONLY : constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW,
         0o600,
       );
       this.charges.set(ref, charge);
@@ -207,6 +217,7 @@ export class EncryptedRequestBlobs implements BlobStore {
     }
   }
   private async syncDirectory(): Promise<void> {
+    if (process.platform === "win32") { syncPrivateDirectory(this.directory); return; }
     const dir = await open(this.directory, constants.O_RDONLY);
     try {
       await dir.sync();
@@ -239,7 +250,7 @@ export class EncryptedRequestBlobs implements BlobStore {
           info.isFile() &&
             info.size >= 28 &&
             info.size <= RESPONSE_LIMIT + 28 &&
-            (info.mode & 0o077) === 0,
+            privatePermissions(info, join(this.directory, ref)),
           "REQUEST_CONTEXT_UNAVAILABLE",
           "The protected blob file is invalid.",
         );

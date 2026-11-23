@@ -1,5 +1,7 @@
 """Language-neutral local wallet protocol over a caller-private inherited pipe."""
+import io
 import json
+import os
 import socket
 
 MAX_FRAME_BYTES = 128 * 1024
@@ -13,8 +15,21 @@ class ClientError(Exception):
 
 class WalletClient:
     def __init__(self, fd=3):
-        self.socket = socket.socket(fileno=fd)
-        self.pipe = self.socket.makefile("rwb")
+        self.socket = None
+        if os.name == "nt":
+            # Node/libuv passes a CRT pipe descriptor, not a Winsock socket.
+            import msvcrt
+            msvcrt.setmode(fd, os.O_BINARY)
+            reader = io.FileIO(os.dup(fd), "rb")
+            try:
+                writer = io.FileIO(fd, "wb")
+                self.pipe = io.BufferedRWPair(reader, writer)
+            except BaseException:
+                reader.close()
+                raise
+        else:
+            self.socket = socket.socket(fileno=fd)
+            self.pipe = self.socket.makefile("rwb")
         self.sequence = 0
 
     def call(self, method, **params):
@@ -42,4 +57,5 @@ class WalletClient:
 
     def close(self):
         self.pipe.close()
-        self.socket.close()
+        if self.socket is not None:
+            self.socket.close()

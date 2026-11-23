@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 44,
+  "revision": 45,
   "config": {
     "providerConfigRules": {
       "templateRules": [
@@ -2124,7 +2124,7 @@
           "config": {
             "optionSpecs": {
               "reasoningLevel": {
-                "map": "{\n  \"thinking\": {\n    \"type\": reasoningLevel == \"disabled\" || reasoningLevel == \"none\" ? \"disabled\" : \"enabled\"\n  },\n  \"enable_thinking\": reasoningLevel != \"disabled\" && reasoningLevel != \"none\",\n  \"reasoning_effort\": reasoningLevel == \"disabled\" ? \"none\" : reasoningLevel == \"enabled\" ? \"high\" : reasoningLevel,\n  \"reasoning\": {\n    \"effort\": reasoningLevel == \"disabled\" ? \"none\" : reasoningLevel == \"enabled\" ? \"high\" : reasoningLevel\n  }\n}"
+                "map": "{\"reasoning_effort\": reasoningLevel == \"disabled\" ? \"none\" : reasoningLevel == \"enabled\" ? \"high\" : reasoningLevel}"
               },
               "maxOutputTokens": {
                 "map": "{'max_completion_tokens': maxOutputTokens}"

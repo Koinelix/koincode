@@ -11,11 +11,11 @@
     "scripts/configure_image.py": "1816d68782f680a0411db29086c077c231cd4d2ba67ae4eb40a5edf7c3e73c0f",
     "scripts/generate_image.py": "7e523335cef43ea8ea9d1c90b0905991a2e38fac10b60d1b856a3dd257ac7cdc",
     "scripts/image_config.py": "7d323a1b5edd5fe711f01fca6e82e6bbd0fa5b42ef408e177c3d1db1806c18bd",
-    "scripts/image_result.py": "0ac77921d4d1b6b83fef04e70eb2727ea7e1394320ae81ee40a3a87d35537d4f",
+    "scripts/image_result.py": "812eba23ac2b7d21d816a276b5015c5e1c879f1e1fd80d33ae4819b3df3fae93",
     "scripts/reference_host.py": "42a5a711adca15cbbf73a4c1653ef60bdf02f4797aa130305b6e1d11470b9a13",
     "scripts/request_options.py": "6e14122136ddaa991ea0d9c8289c13139a5edca8bb9ae155610376419d5352bf",
-    "scripts/request_store.py": "65c0f9d22954b158dc6d1f92ebb604c867044c1c4d5420d5e283886ac362776d",
+    "scripts/request_store.py": "a502a39215d66ec467c9c6f103ac671ec16fd42d8c54a4c13cca1a57b726e9ea",
     "scripts/response_privacy.py": "e7f8bb95311dce68de618db7ad178f9552946a77f696fe1a3b303c7e99782394",
-    "scripts/wallet_client.py": "8c99a5e7b9962cea444718e31ed336511b63c7e8c29dd746407b16606c60b41b"
+    "scripts/wallet_client.py": "89e7114a0fc4a6854984dc4738130fc40cee54d2e16469a83a66efd44d233f45"
   }
 }

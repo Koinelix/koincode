@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { canonical } from "./canonical.js";
 import { GENERAL_SOURCE_SCHEMA, SCHEMA } from "./schema.js";
 import { requireWallet } from "../domain/errors.js";
+import { createWindowsPrivateFile, syncPrivateDirectory } from "./privateFilesystem.js";
 
 /** Explicit, authenticated operation under the original writer. Opening a wallet never calls this. */
 export function migrateGeneralSources(db: DatabaseSync, directory: string): { backupPath: string } {
@@ -18,9 +19,12 @@ export function migrateGeneralSources(db: DatabaseSync, directory: string): { ba
   requireWallet(db.prepare("SELECT value FROM wallet_metadata WHERE name='initialization_state'").get()?.value === "READY" &&
     db.prepare("PRAGMA quick_check").get()?.quick_check === "ok", "WALLET_RECOVERY_REQUIRED", "The original ready wallet is required.");
   const backupPath = join(directory, `pre-general-sources-${randomUUID()}.sqlite`);
-  closeSync(openSync(backupPath, "wx", 0o600));
+  if (process.platform === "win32") createWindowsPrivateFile(backupPath);
+  else closeSync(openSync(backupPath, "wx", 0o600));
   db.prepare("VACUUM INTO ?").run(backupPath);
-  for (const path of [backupPath, directory]) { const fd = openSync(path, "r"); try { fsyncSync(fd); } finally { closeSync(fd); } }
+  const fd = openSync(backupPath, process.platform === "win32" ? "r+" : "r");
+  try { fsyncSync(fd); } finally { closeSync(fd); }
+  syncPrivateDirectory(directory);
   const backup = new DatabaseSync(backupPath, { readOnly: true });
   try { requireWallet(backup.prepare("PRAGMA quick_check").get()?.quick_check === "ok" && schema(backup) === schema(db),
     "WALLET_STORAGE_FAILED", "The consistent source-upgrade backup could not be verified."); }

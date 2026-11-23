@@ -34,6 +34,7 @@ export function attachGeneralPaymentSource(state: WalletState, key: GeneralManag
   state.subjects.push({ subjectId, ownerId: state.ownerId, address: wallet.address, network: wallet.network, asset: wallet.asset,
     recoveryRequired: false, signingPaused: false });
   state.policies[subjectId] = { enabled: false, maxPerPaymentAtomic: "0", maxRolling24hAtomic: "0", maxCumulativeAtomic: "0", version: 1 };
+  if (state.wallets.length === 1 && state.defaultWalletId === null) state.defaultWalletId = wallet.walletId;
   synchronizeDesktopClientScope(state);
   return wallet;
 }

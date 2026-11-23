@@ -1,4 +1,4 @@
-import { closeSync, constants, existsSync, lstatSync, mkdirSync, openSync, realpathSync } from "node:fs";
+import { closeSync, constants, existsSync, lstatSync, openSync, realpathSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { validateGeneralState, type GeneralWalletState } from "../app/generalState.js";
@@ -6,6 +6,7 @@ import { WalletError, requireWallet } from "../domain/errors.js";
 import { canonical, digest } from "./canonical.js";
 import { acquireWalletWriter } from "./database.js";
 import { preflightGeneralDatabase } from "./generalStoragePreflight.js";
+import { createPrivateDirectory, privatePermissions } from "./privateFilesystem.js";
 import type { GeneralStateRepository } from "./generalGuardedState.js";
 
 const MAX_STATE = 512 * 1024;
@@ -18,9 +19,9 @@ export class SqliteGeneralStateRepository implements GeneralStateRepository {
 
   static open(directory: string, mode: "create" | "open"): SqliteGeneralStateRepository {
     requireWallet(isAbsolute(directory) && resolve(directory) === directory, "GENERAL_STORE_UNAVAILABLE", "Invalid general wallet directory.");
-    if (mode === "create" && !existsSync(directory)) mkdirSync(directory, { recursive: true, mode: 0o700 });
+    if (mode === "create" && !existsSync(directory)) createPrivateDirectory(directory);
     const info = lstatSync(directory);
-    requireWallet(info.isDirectory() && !info.isSymbolicLink() && (info.mode & 0o077) === 0 &&
+    requireWallet(info.isDirectory() && !info.isSymbolicLink() && privatePermissions(info, directory, true) &&
       (typeof process.getuid !== "function" || info.uid === process.getuid()),
     "GENERAL_STORE_UNAVAILABLE", "The general wallet directory is not private.");
     const realDirectory = realpathSync(directory);
@@ -54,7 +55,7 @@ export class SqliteGeneralStateRepository implements GeneralStateRepository {
     try {
       const current = lstatSync(this.path);
       requireWallet(!this.closed && current.isFile() && !current.isSymbolicLink() && current.dev === this.device && current.ino === this.inode &&
-        (current.mode & 0o077) === 0 && (typeof process.getuid !== "function" || current.uid === process.getuid()),
+        privatePermissions(current, this.path) && (typeof process.getuid !== "function" || current.uid === process.getuid()),
       "GENERAL_STORE_UNAVAILABLE", "The general wallet database identity changed.");
     } catch { throw new WalletError("GENERAL_STORE_UNAVAILABLE", "The general wallet database identity changed."); }
   }

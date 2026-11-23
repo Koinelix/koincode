@@ -265,6 +265,7 @@
   "homeClose": "关闭",
   "homeSelfCustody": "密钥由你掌握",
   "homeChooseWallet": "选择钱包",
+  "homeChooseWalletNotice": "请先在上方选择钱包，再查看地址和设置。",
   "homeManagerOpened": "请在钱包管理窗口继续操作。",
   "homeManagerBusy": "钱包正在处理另一项操作，请稍后再试。",
   "homeManagerUnavailable": "钱包管理服务尚未就绪，暂时无法创建、导入或导出。",

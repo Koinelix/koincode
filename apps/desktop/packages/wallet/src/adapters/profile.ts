@@ -1,5 +1,6 @@
 import type { ProtectedProfile as Profile } from "./profileRecords.js";
-import { existsSync, mkdirSync, realpathSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
+import { createPrivateDirectory } from "./privateFilesystem.js";
 import { isAbsolute } from "node:path";
 import type { KeyCustody, ProtectedStore, WalletChain } from "../app/ports.js";
 import type { ClockSources } from "../app/clock.js";
@@ -64,7 +65,7 @@ export async function openWalletProfile(input: {
         "WALLET_RECOVERY_REQUIRED",
         "This OS profile already owns a wallet. Existing history must be opened or explicitly recovered.",
       );
-      mkdirSync(requested, { recursive: true, mode: 0o700 });
+      createPrivateDirectory(requested);
     }
     const directory = realpathSync(requested);
     if (input.mode !== "create")

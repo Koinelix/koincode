@@ -1,4 +1,5 @@
 import { GeneralPaymentCustody } from "./generalPaymentCustody.js";
+import { nativeHelperBasename, nativeHelperFilename } from "./windowsNative.js";
 import { openLocalGeneralPayment, signLocalAllowance } from "./localGeneralPayment.js";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative } from "node:path";
@@ -35,7 +36,7 @@ export function walletServiceDirectory(namespace?: "m4-testnet" | "mainnet"): st
 function namespaceRoot(options: Pick<LocalWalletOptions, "namespace" | "keychainHelper">): string {
   const root = walletServiceDirectory(options.namespace);
   const expectedHelper = options.namespace === "mainnet" ? "keychain-helper-mainnet" : options.namespace === "m4-testnet" ? "keychain-helper-m4-testnet" : "keychain-helper";
-  requireWallet(basename(options.keychainHelper) === expectedHelper,
+  requireWallet(nativeHelperBasename(options.keychainHelper) === expectedHelper,
     "INVALID_REQUEST_CONFIGURATION", "The wallet helper does not match the selected namespace.");
   return root;
 }
@@ -76,7 +77,7 @@ export async function openLocalWallet(options: LocalWalletOptions): Promise<impo
     (installationId ? join(root, "profiles", installationId) : undefined);
   assertNamespaceDirectory(namespace, root, directory);
   const generalDirectory = join(dirname(root), "general-local");
-  const generalHelper = join(dirname(options.keychainHelper), basename(dirname(options.keychainHelper)) === "user-v2" ? "keychain-helper-general-wallet" : "noninteractive-v1/keychain-helper-general-wallet");
+  const generalHelper = join(dirname(options.keychainHelper), basename(dirname(options.keychainHelper)) === "user-v2" ? nativeHelperFilename("keychain-helper-general-wallet") : "noninteractive-v1/keychain-helper-general-wallet");
   const open = () => openWalletProfile({
     mode,
     freshGeneralSources: options.mode === "create" && options.freshGeneralSources === true,

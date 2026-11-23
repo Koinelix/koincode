@@ -1,4 +1,5 @@
 import { migrateGeneralSources } from "./generalSourceMigration.js";
+import { privatePermissions } from "./privateFilesystem.js";
 import {
   markFreshStore,
   markOpenedStore,
@@ -37,7 +38,8 @@ function privateFile(path: string): void {
     "UNSAFE_STORAGE_PATH",
     "A private regular file is required.",
   );
-  chmodSync(path, 0o600);
+  if (process.platform !== "win32") chmodSync(path, 0o600);
+  requireWallet(process.platform !== "win32" || privatePermissions(info, path), "UNSAFE_STORAGE_PATH", "The wallet file is not private.");
 }
 
 export function acquireWalletWriter(directory: string): DatabaseSync {
@@ -107,7 +109,8 @@ export class WalletDatabase {
       "UNSAFE_STORAGE_PATH",
       "A private wallet directory is required.",
     );
-    chmodSync(directory, 0o700);
+    if (process.platform !== "win32") chmodSync(directory, 0o700);
+    requireWallet(process.platform !== "win32" || privatePermissions(info, directory, true), "UNSAFE_STORAGE_PATH", "The wallet directory is not private.");
     directory = realpathSync(directory);
     const lease = heldLease ?? acquireWalletWriter(directory);
     let connection: DatabaseSync | undefined;

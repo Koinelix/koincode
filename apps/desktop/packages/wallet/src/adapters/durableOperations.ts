@@ -1,4 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
+import { privatePermissions } from "./privateFilesystem.js";
 import { lstatSync, fstatSync, openSync, closeSync, realpathSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -178,7 +179,7 @@ function validatePath(path: string, clientId: string): void {
 
 function fileIdentity(path: string): string {
   const info = lstatSync(path, { bigint: true });
-  requireWallet(info.isFile() && !info.isSymbolicLink() && info.nlink === 1n && (info.mode & 0o077n) === 0n,
+  requireWallet(info.isFile() && !info.isSymbolicLink() && info.nlink === 1n && privatePermissions(info, path),
     "UNSAFE_STORAGE_PATH", "A private regular operation journal without extra links is required.");
   return `${info.dev}:${info.ino}`;
 }

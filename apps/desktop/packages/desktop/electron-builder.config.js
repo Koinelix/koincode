@@ -500,6 +500,13 @@ export default {
     `node_modules/koffi/build/koffi/${targetPlatform.os}_${targetPlatform.arch}/**`,
   ],
   beforePack: async (context) => {
+    if (context.electronPlatformName === "win32") {
+      if (targetPlatform.os !== "win32" || targetPlatform.arch !== "x64") throw new Error("The Windows wallet package target must be x64.");
+      runTimedSync("beforePack:buildWindowsWalletHelpers", () =>
+        runCommand(process.execPath, [resolve(workspaceRoot, "packages/wallet/scripts/build-native.mjs"),
+          "--packaged", "--user-store-v2", "--arch", targetPlatform.arch], { cwd: desktopPackageRoot, stdio: "inherit" }),
+      );
+    }
     if (context.electronPlatformName === "darwin") {
       if (targetPlatform.os !== "darwin" || ELECTRON_BUILDER_ARCH[context.arch] !== targetPlatform.arch) {
         throw new Error("[electron-builder.config] Computer Use Helper target does not match the macOS package.");
@@ -635,6 +642,11 @@ export default {
   } : {}),
   extraResources: [
     { from: "dist-cua-helper", to: "cua-helper", filter: ["**/*"] },
+    ...(targetPlatform.os === "win32" ? [{
+      from: resolve(workspaceRoot, ".tmp/wallet-native-package", targetPlatform.arch),
+      to: "wallet-native",
+      filter: ["user-v2/keychain-helper.exe", "user-v2/keychain-helper-mainnet.exe", "user-v2/keychain-helper-m4-testnet.exe", "user-v2/keychain-helper-general-wallet.exe"],
+    }] : []),
     ...(targetPlatform.os === "darwin" ? [{
       from: resolve(workspaceRoot, ".tmp/wallet-native-package", targetPlatform.arch),
       to: "wallet-native",
@@ -815,11 +827,8 @@ export default {
     ],
   },
   nsis: {
-    // 升级 GUID 保持历史安装 identity 的等价 UUID，避免改产品名后生成第二套卸载项。
-    guid:
-      desktopProductIdentity.flavor === "preview"
-        ? "ae9417d7-4889-5caf-9177-cd8e16f266f2"
-        : "268ce9e6-a30b-5890-ad18-d4b3ebba5377",
+    // Let electron-builder derive the install and uninstall identity from the KoinCode appId.
+    // A legacy GUID would reuse another product's saved directory and uninstaller.
     oneClick: false,
     allowToChangeInstallationDirectory: true,
     // Windows 安装流程使用独立安装图标，和应用运行时图标解耦。

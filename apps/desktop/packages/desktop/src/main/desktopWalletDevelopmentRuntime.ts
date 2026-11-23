@@ -14,17 +14,24 @@ export class DesktopWalletDevelopmentRuntime {
     if (this.pending) return this.pending;
     const work = new Promise<void>((done, fail) => {
       const child = spawn(process.execPath, [resolve(this.options.appRoot, "scripts/prepare-wallet-development.mjs")], {
-        cwd: this.options.appRoot, detached: process.platform !== "win32", stdio: "ignore",
+        cwd: this.options.appRoot, detached: process.platform !== "win32", stdio: ["ignore", "ignore", "pipe"],
         env: { ...process.env, ELECTRON_RUN_AS_NODE: "1", FCODE_ENV: this.options.environment },
       });
       this.child = child;
+      let diagnostic = "";
+      child.stderr?.on("data", (bytes: Buffer) => { diagnostic = (diagnostic + bytes.toString("utf8")).slice(-4096); });
       let expired = false;
       const timer = setTimeout(() => { expired = true; this.stopChild(); }, 160_000);
       const finish = (ok: boolean) => {
         clearTimeout(timer);
         if (this.child === child) this.child = undefined;
         if (ok && !expired && !this.disposed) done();
-        else fail(new Error("WALLET_RUNTIME_UNAVAILABLE"));
+        else {
+          const stage = !expired && !this.disposed ? /\b(WALLET_NATIVE_BUILD_FAILED|WALLET_RUNTIME_BUILD_FAILED|WALLET_RUNTIME_ASSETS_INCOMPLETE)\b/.exec(diagnostic)?.[1] : undefined;
+          const code = stage ?? "WALLET_RUNTIME_UNAVAILABLE";
+          console.warn("[wallet] Runtime preparation failed.", { code });
+          fail(Object.assign(new Error(code), { code }));
+        }
       };
       child.once("error", () => finish(false));
       child.once("close", (code) => finish(code === 0));

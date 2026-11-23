@@ -13,8 +13,7 @@ export class WalletExternalPayments {
     signal: AbortSignal) => Promise<void>, private readonly namespace: "m4-testnet" | "mainnet") {}
 
   async start(service: Awaited<ReturnType<typeof wallet.openLocalWalletRequests>>): Promise<void> {
-    // The existing Unix adapter fails closed; Windows needs its ACL-authenticated native pipe adapter.
-    if (process.platform === "win32") return;
+    // The wallet selects its authenticated local transport for the current OS.
     this.socket = await wallet.startWalletSocket(service.runtime, service.requests,
       // The socket lives in the service directory of the network this build opens.
       join(wallet.walletServiceDirectory(this.namespace), "service"), {

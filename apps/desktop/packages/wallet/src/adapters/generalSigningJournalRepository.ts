@@ -1,10 +1,11 @@
-import { closeSync, constants, existsSync, lstatSync, mkdirSync, openSync, realpathSync } from "node:fs";
+import { closeSync, constants, existsSync, lstatSync, openSync, realpathSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { WalletError, requireWallet } from "../domain/errors.js";
 import { canonical } from "./canonical.js";
 import { acquireWalletWriter } from "./database.js";
 import { preflightGeneralDatabase } from "./generalStoragePreflight.js";
+import { createPrivateDirectory, privatePermissions } from "./privateFilesystem.js";
 import type { GeneralSigningEvent, GeneralSigningJournalRepository } from "./generalSigningJournal.js";
 
 const MAX_EVENT = 8192;
@@ -19,9 +20,9 @@ export class SqliteGeneralSigningJournalRepository implements GeneralSigningJour
 
   static open(directory: string, mode: "create" | "open"): SqliteGeneralSigningJournalRepository {
     requireWallet(isAbsolute(directory) && resolve(directory) === directory, "SIGNING_CONTINUITY_UNKNOWN", "Invalid signing journal directory.");
-    if (mode === "create" && !existsSync(directory)) mkdirSync(directory, { recursive: true, mode: 0o700 });
+    if (mode === "create" && !existsSync(directory)) createPrivateDirectory(directory);
     const info = lstatSync(directory);
-    requireWallet(info.isDirectory() && !info.isSymbolicLink() && (info.mode & 0o077) === 0 &&
+    requireWallet(info.isDirectory() && !info.isSymbolicLink() && privatePermissions(info, directory, true) &&
       (typeof process.getuid !== "function" || info.uid === process.getuid()) && realpathSync(directory) === directory,
     "SIGNING_CONTINUITY_UNKNOWN", "The signing journal directory is not private.");
     const path = join(directory, "general-signing-journal.sqlite");
@@ -53,7 +54,7 @@ export class SqliteGeneralSigningJournalRepository implements GeneralSigningJour
     try {
       const file = lstatSync(this.path);
       requireWallet(!this.closed && file.isFile() && !file.isSymbolicLink() && file.dev === this.device && file.ino === this.inode &&
-        (file.mode & 0o077) === 0 && (typeof process.getuid !== "function" || file.uid === process.getuid()),
+        privatePermissions(file, this.path) && (typeof process.getuid !== "function" || file.uid === process.getuid()),
       "SIGNING_CONTINUITY_UNKNOWN", "The signing journal identity changed.");
     } catch { throw new WalletError("SIGNING_CONTINUITY_UNKNOWN", "The signing journal identity changed."); }
   }

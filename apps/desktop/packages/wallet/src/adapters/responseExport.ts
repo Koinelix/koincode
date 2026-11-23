@@ -125,11 +125,12 @@ export class ResponseExporter {
         );
         assertCurrent();
         await link(temporary, target);
-        const dir = await open(destination.directory, constants.O_RDONLY);
+        // Windows flushes the file above; Node cannot fsync a Windows directory.
+        const dir = process.platform === "win32" ? undefined : await open(destination.directory, constants.O_RDONLY);
         try {
-          await dir.sync();
+          await dir?.sync();
         } finally {
-          await dir.close();
+          await dir?.close();
         }
         this.#destinations.delete(ref);
         return {
